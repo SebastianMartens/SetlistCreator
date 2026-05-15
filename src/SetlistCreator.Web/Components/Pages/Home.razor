@@ -19,6 +19,7 @@
 @if (!string.IsNullOrWhiteSpace(successMessage))
 {
     <div class="alert alert-success d-print-none" role="alert">@successMessage</div>
+    <div class="alert alert-success setlist-no-print" role="alert">@successMessage</div>
 }
 
 <div class="row g-4 setlist-no-print">
@@ -83,6 +84,14 @@
                 Print setlist
             </button>
         </div>
+        <div class="mb-2 setlist-no-print">
+            <label class="form-label" for="venueName">Venue name</label>
+            <input id="venueName" class="form-control" @bind="setlist.VenueName" />
+        </div>
+        <div class="mb-2 setlist-no-print">
+            <label class="form-label" for="gigDate">Gig date</label>
+            <InputDate id="gigDate" class="form-control" @bind-Value="setlist.GigDate" />
+        </div>
         @if (setlist.Items.Count == 0)
         {
             <p>No items added yet.</p>
@@ -114,7 +123,7 @@
                 }
             </ul>
         }
-        <button class="btn btn-success mt-2 d-print-none" @onclick="SaveSetlist" disabled="@(setlist.Items.Count == 0)">Save setlist</button>
+        <button class="btn btn-success mt-2 setlist-no-print" @onclick="SaveSetlist" disabled="@(setlist.Items.Count == 0)">Save setlist</button>
         <p class="fw-bold mt-2 setlist-no-print">Total duration (songs + breaks): @FormatDuration(SetlistService.CalculateTotalDuration(setlist))</p>
     </div>
 </div>
