@@ -3,12 +3,13 @@
 @using SetlistCreator.Backend.Models
 @using SetlistCreator.Backend.Services
 @inject ISetlistService SetlistService
+@inject IJSRuntime JS
 
 <PageTitle>Setlist Creator</PageTitle>
 
-<h1>Setlist Creator</h1>
+<h1 class="setlist-no-print">Setlist Creator</h1>
 
-<p>Create a live show setlist by adding songs from albums, adding manual songs, and inserting breaks.</p>
+<p class="setlist-no-print">Create a live show setlist by adding songs from albums, adding manual songs, and inserting breaks.</p>
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
@@ -20,7 +21,7 @@
     <div class="alert alert-success" role="alert">@successMessage</div>
 }
 
-<div class="row g-4">
+<div class="row g-4 setlist-no-print">
     <div class="col-md-6">
         <h2>Album songs</h2>
         <div class="mb-2">
@@ -59,7 +60,7 @@
 </div>
 
 <div class="row g-4 mt-1">
-    <div class="col-md-6">
+    <div class="col-md-6 setlist-no-print">
         <h2>Break</h2>
         <div class="mb-2">
             <label class="form-label" for="breakName">Break name</label>
@@ -73,34 +74,48 @@
     </div>
 
     <div class="col-md-6">
-        <h2>Current setlist</h2>
-        <div class="mb-2">
-            <label class="form-label" for="venueName">Venue name</label>
-            <input id="venueName" class="form-control" @bind="setlist.VenueName" />
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="setlist-no-print">Current setlist</h2>
+            <button class="btn btn-outline-secondary btn-sm setlist-no-print"
+                    @onclick="PrintSetlist"
+                    disabled="@(setlist.Items.Count == 0)"
+                    title="@(setlist.Items.Count == 0 ? "Add at least one setlist item to print." : "Print setlist")">
+                Print setlist
+            </button>
         </div>
-        <div class="mb-2">
-            <label class="form-label" for="gigDate">Gig date</label>
-            <InputDate id="gigDate" class="form-control" @bind-Value="setlist.GigDate" />
-        </div>
-
         @if (setlist.Items.Count == 0)
         {
             <p>No items added yet.</p>
         }
         else
         {
-            <ol class="list-group list-group-numbered">
+            var songNumber = 0;
+            <ul class="list-group setlist-print-content">
                 @foreach (var item in setlist.Items)
                 {
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>@item.Name <small class="text-muted">(@item.Type)</small></span>
-                        <span>@FormatDuration(item.Duration)</span>
-                    </li>
+                    if (item.Type == SetlistItemType.Song)
+                    {
+                        songNumber++;
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><span class="fw-semibold me-2">@($"{songNumber}.")</span>@item.Name</span>
+                            <span>@FormatDuration(item.Duration)</span>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="list-group-item setlist-break-item">
+                            <div class="setlist-break-line">
+                                <hr />
+                                <span class="text-muted">@item.Name (@FormatDuration(item.Duration))</span>
+                                <hr />
+                            </div>
+                        </li>
+                    }
                 }
-            </ol>
+            </ul>
         }
         <button class="btn btn-success mt-2" @onclick="SaveSetlist" disabled="@(setlist.Items.Count == 0)">Save setlist</button>
-        <p class="fw-bold mt-2">Total duration (songs + breaks): @FormatDuration(SetlistService.CalculateTotalDuration(setlist))</p>
+        <p class="fw-bold mt-2 setlist-no-print">Total duration (songs + breaks): @FormatDuration(SetlistService.CalculateTotalDuration(setlist))</p>
     </div>
 </div>
 
@@ -231,6 +246,11 @@
         {
             errorMessage = ex.Message;
         }
+    }
+
+    private async Task PrintSetlist()
+    {
+        await JS.InvokeVoidAsync("window.print");
     }
 
     private static string FormatDuration(TimeSpan duration) => $"{(int)duration.TotalMinutes:00}:{duration.Seconds:00}";

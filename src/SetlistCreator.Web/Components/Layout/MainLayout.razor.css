@@ -76,6 +76,21 @@ main {
     }
 }
 
+@media print {
+    .page {
+        display: block;
+    }
+
+    .sidebar,
+    .top-row {
+        display: none !important;
+    }
+
+    .content {
+        padding: 0 !important;
+    }
+}
+
 #blazor-error-ui {
     color-scheme: light only;
     background: lightyellow;
