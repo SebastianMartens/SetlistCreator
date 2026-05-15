@@ -71,7 +71,12 @@
     <div class="col-md-6">
         <div class="d-flex justify-content-between align-items-center">
             <h2>Current setlist</h2>
-            <button class="btn btn-outline-secondary btn-sm setlist-no-print" @onclick="PrintSetlist" disabled="@(setlist.Items.Count == 0)">Print setlist</button>
+            <button class="btn btn-outline-secondary btn-sm setlist-no-print"
+                    @onclick="PrintSetlist"
+                    disabled="@(setlist.Items.Count == 0)"
+                    title="@(setlist.Items.Count == 0 ? "Add at least one setlist item to print." : "Print setlist")">
+                Print setlist
+            </button>
         </div>
         @if (setlist.Items.Count == 0)
         {
