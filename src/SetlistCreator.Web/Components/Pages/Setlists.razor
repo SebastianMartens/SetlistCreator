@@ -3,6 +3,7 @@
 @using SetlistCreator.Backend.Models
 @using SetlistCreator.Backend.Services
 @inject ISetlistService SetlistService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Manage Setlists</PageTitle>
 
@@ -50,6 +51,7 @@ else
                         <td>
                             <div class="d-flex gap-2 flex-wrap">
                                 <button class="btn btn-sm btn-outline-primary" @onclick="() => SaveGigInfo(setlist.Id)">Save details</button>
+                                <button class="btn btn-sm btn-primary" @onclick="() => OpenInBuilder(setlist.Id)">Open in builder</button>
                                 <button class="btn btn-sm btn-outline-secondary" @onclick="() => Copy(setlist.Id)">Copy</button>
                                 <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(setlist.Id)">Delete</button>
                             </div>
@@ -133,6 +135,8 @@ else
             errorMessage = ex.Message;
         }
     }
+
+    private void OpenInBuilder(Guid setlistId) => NavigationManager.NavigateTo($"/?setlistId={setlistId}");
 
     private void OnVenueChanged(Guid setlistId, string? value) => editVenueNames[setlistId] = value ?? string.Empty;
 

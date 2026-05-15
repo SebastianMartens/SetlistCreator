@@ -20,6 +20,8 @@ public interface ISetlistService
 
     IReadOnlyList<Setlist> GetSavedSetlists();
 
+    Setlist GetSavedSetlist(Guid setlistId);
+
     Setlist CopySavedSetlist(Guid setlistId);
 
     void UpdateGigInfo(Guid setlistId, string venueName, DateOnly? gigDate);

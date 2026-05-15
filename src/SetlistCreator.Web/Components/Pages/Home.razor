@@ -105,6 +105,10 @@
 </div>
 
 @code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "setlistId")]
+    public Guid? SetlistId { get; set; }
+
     private IReadOnlyList<Album> albums = [];
     private IReadOnlyList<Song> albumSongs = [];
     private Setlist setlist = new();
@@ -116,6 +120,7 @@
     private int breakMinutes = 10;
     private string? errorMessage;
     private string? successMessage;
+    private Guid? loadedSetlistId;
 
     protected override void OnInitialized()
     {
@@ -131,6 +136,28 @@
     }
 
     private void OnAlbumChanged() => UpdateAlbumSongs();
+
+    protected override void OnParametersSet()
+    {
+        if (SetlistId is not Guid setlistId || loadedSetlistId == setlistId)
+        {
+            return;
+        }
+
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            setlist = SetlistService.GetSavedSetlist(setlistId);
+            loadedSetlistId = setlistId;
+            successMessage = "Saved setlist opened in builder.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
 
     private void UpdateAlbumSongs()
     {
@@ -193,6 +220,7 @@
         try
         {
             SetlistService.SaveSetlist(setlist);
+            loadedSetlistId = setlist.Id;
             successMessage = "Setlist saved.";
         }
         catch (Exception ex)

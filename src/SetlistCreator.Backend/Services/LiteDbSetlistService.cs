@@ -50,6 +50,16 @@ public sealed class LiteDbSetlistService : ISetlistService
         return collection.FindAll().Select(ToModel).ToList();
     }
 
+    public Setlist GetSavedSetlist(Guid setlistId)
+    {
+        using var database = new LiteDatabase(_connectionString);
+        var collection = database.GetCollection<SetlistDocument>(CollectionName);
+        var source = collection.FindById(setlistId)
+            ?? throw new KeyNotFoundException($"No setlist with id '{setlistId}' was found.");
+
+        return ToModel(source);
+    }
+
     public Setlist CopySavedSetlist(Guid setlistId)
     {
         using var database = new LiteDatabase(_connectionString);

@@ -92,10 +92,17 @@ public sealed class InMemorySetlistService : ISetlistService
 
     public IReadOnlyList<Setlist> GetSavedSetlists() => _savedSetlists.Select(Clone).ToList();
 
-    public Setlist CopySavedSetlist(Guid setlistId)
+    public Setlist GetSavedSetlist(Guid setlistId)
     {
         var source = _savedSetlists.FirstOrDefault(setlist => setlist.Id == setlistId)
             ?? throw new KeyNotFoundException($"No setlist with id '{setlistId}' was found.");
+
+        return Clone(source);
+    }
+
+    public Setlist CopySavedSetlist(Guid setlistId)
+    {
+        var source = GetSavedSetlist(setlistId);
 
         var copy = Clone(source);
         copy.Id = Guid.NewGuid();

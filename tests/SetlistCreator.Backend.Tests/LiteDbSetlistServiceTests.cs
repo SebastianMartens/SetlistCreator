@@ -48,6 +48,22 @@ public sealed class LiteDbSetlistServiceTests : IDisposable
     }
 
     [Fact]
+    public void GetSavedSetlist_ReturnsExpectedSetlist()
+    {
+        var service = new LiteDbSetlistService(_databasePath);
+        var setlist = new Setlist { VenueName = "Club" };
+        var song = service.GetSongsForAlbum(service.GetAlbums().First().Id).First();
+        service.AddSong(setlist, song);
+        service.SaveSetlist(setlist);
+
+        var saved = service.GetSavedSetlist(setlist.Id);
+
+        Assert.Equal(setlist.Id, saved.Id);
+        Assert.Equal("Club", saved.VenueName);
+        Assert.Single(saved.Items);
+    }
+
+    [Fact]
     public void UpdateAndDeleteSavedSetlist_ChangesPersistence()
     {
         var service = new LiteDbSetlistService(_databasePath);
