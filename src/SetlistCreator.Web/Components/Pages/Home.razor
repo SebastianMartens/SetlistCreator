@@ -7,7 +7,7 @@
 
 <PageTitle>Setlist Creator</PageTitle>
 
-<h1>Setlist Creator</h1>
+<h1 class="setlist-no-print">Setlist Creator</h1>
 
 <p class="setlist-no-print">Create a live show setlist by adding songs from albums, adding manual songs, and inserting breaks.</p>
 
@@ -70,7 +70,7 @@
 
     <div class="col-md-6">
         <div class="d-flex justify-content-between align-items-center">
-            <h2>Current setlist</h2>
+            <h2 class="setlist-no-print">Current setlist</h2>
             <button class="btn btn-outline-secondary btn-sm setlist-no-print"
                     @onclick="PrintSetlist"
                     disabled="@(setlist.Items.Count == 0)"
@@ -85,7 +85,7 @@
         else
         {
             var songNumber = 0;
-            <ul class="list-group">
+            <ul class="list-group setlist-print-content">
                 @foreach (var item in setlist.Items)
                 {
                     if (item.Type == SetlistItemType.Song)
@@ -109,7 +109,7 @@
                 }
             </ul>
         }
-        <p class="fw-bold mt-2">Total duration (songs + breaks): @FormatDuration(SetlistService.CalculateTotalDuration(setlist))</p>
+        <p class="fw-bold mt-2 setlist-no-print">Total duration (songs + breaks): @FormatDuration(SetlistService.CalculateTotalDuration(setlist))</p>
     </div>
 </div>
 

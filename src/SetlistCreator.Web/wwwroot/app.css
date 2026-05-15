@@ -76,6 +76,16 @@ h1:focus {
         display: none !important;
     }
 
+    .setlist-print-content {
+        font-size: 1.7rem;
+        line-height: 1.35;
+    }
+
+    .setlist-print-content .list-group-item {
+        padding-top: 0.55rem;
+        padding-bottom: 0.55rem;
+    }
+
     .list-group-item {
         border: none;
         padding-left: 0;
