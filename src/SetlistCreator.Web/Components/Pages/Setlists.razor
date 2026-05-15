@@ -29,22 +29,22 @@ else
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Venue name</th>
-                    <th>Date</th>
-                    <th>Items</th>
-                    <th>Total duration</th>
+                    <th><button class="sort-header" @onclick='() => Sort("date")'>Date <span>@SortIndicator("date")</span></button></th>
+                    <th><button class="sort-header" @onclick='() => Sort("venue")'>Venue name <span>@SortIndicator("venue")</span></button></th>
+                    <th><button class="sort-header" @onclick='() => Sort("items")'>Items <span>@SortIndicator("items")</span></button></th>
+                    <th><button class="sort-header" @onclick='() => Sort("duration")'>Total duration <span>@SortIndicator("duration")</span></button></th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var setlist in savedSetlists)
+                @foreach (var setlist in SortedSetlists)
                 {
                     <tr>
                         <td>
-                            <input class="form-control" value="@editVenueNames[setlist.Id]" @onchange="(e => OnVenueChanged(setlist.Id, e.Value?.ToString()))" />
+                            <input type="date" class="form-control" value="@FormatDate(editGigDates[setlist.Id])" @onchange="(e => OnGigDateChanged(setlist.Id, e.Value?.ToString()))" />
                         </td>
                         <td>
-                            <input type="date" class="form-control" value="@FormatDate(editGigDates[setlist.Id])" @onchange="(e => OnGigDateChanged(setlist.Id, e.Value?.ToString()))" />
+                            <input class="form-control" value="@editVenueNames[setlist.Id]" @onchange="(e => OnVenueChanged(setlist.Id, e.Value?.ToString()))" />
                         </td>
                         <td>@setlist.Items.Count</td>
                         <td>@FormatDuration(SetlistService.CalculateTotalDuration(setlist))</td>
@@ -69,6 +69,31 @@ else
     private readonly Dictionary<Guid, DateOnly?> editGigDates = [];
     private string? message;
     private string? errorMessage;
+    private string sortColumn = "date";
+    private bool sortAscending = true;
+
+    private IEnumerable<Setlist> SortedSetlists => sortColumn switch
+    {
+        "venue"    => sortAscending ? savedSetlists.OrderBy(s => s.VenueName)                              : savedSetlists.OrderByDescending(s => s.VenueName),
+        "items"    => sortAscending ? savedSetlists.OrderBy(s => s.Items.Count)                           : savedSetlists.OrderByDescending(s => s.Items.Count),
+        "duration" => sortAscending ? savedSetlists.OrderBy(s => SetlistService.CalculateTotalDuration(s)) : savedSetlists.OrderByDescending(s => SetlistService.CalculateTotalDuration(s)),
+        _          => sortAscending
+            ? savedSetlists.OrderBy(s => s.GigDate.HasValue ? 0 : 1).ThenBy(s => s.GigDate)
+            : savedSetlists.OrderBy(s => s.GigDate.HasValue ? 0 : 1).ThenByDescending(s => s.GigDate),
+    };
+
+    private void Sort(string column)
+    {
+        if (sortColumn == column)
+            sortAscending = !sortAscending;
+        else
+        {
+            sortColumn = column;
+            sortAscending = true;
+        }
+    }
+
+    private string SortIndicator(string column) => sortColumn == column ? (sortAscending ? "▲" : "▼") : string.Empty;
 
     protected override void OnInitialized() => ReloadSetlists();
 
