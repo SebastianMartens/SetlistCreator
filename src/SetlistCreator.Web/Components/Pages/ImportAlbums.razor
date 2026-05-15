@@ -1,0 +1,263 @@
+@page "/import"
+@rendermode InteractiveServer
+@using SetlistCreator.Backend.Models
+@using SetlistCreator.Backend.Services
+@using SetlistCreator.Web.Services
+@inject ISetlistService SetlistService
+@inject MusicBrainzService MusicBrainzService
+@inject DiscogsService DiscogsService
+@inject ITunesService ITunesService
+@inject DeezerService DeezerService
+
+<PageTitle>Import Albums</PageTitle>
+
+<h1>Import Albums</h1>
+
+@{
+    var importedAlbums = SetlistService.GetAlbums();
+}
+
+<h2>Imported albums</h2>
+@if (importedAlbums.Count == 0)
+{
+    <p class="text-muted">No albums imported yet.</p>
+}
+else
+{
+    <ul class="import-list mb-2">
+        @foreach (var album in importedAlbums.OrderBy(a => a.Name))
+        {
+            <li class="import-list-item d-flex justify-content-between align-items-center">
+                <span>
+                    <span class="fw-semibold">@album.Name</span>
+                    <span class="text-muted"> — @album.Songs.Count songs</span>
+                </span>
+                <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveImportedAlbum(album.Id)">Remove</button>
+            </li>
+        }
+    </ul>
+}
+
+<h2>Search &amp; import</h2>
+
+<div class="d-flex gap-2 mb-2">
+    <button class="btn btn-sm @(activeSource == MusicSource.MusicBrainz ? "btn-primary" : "btn-outline-secondary")" @onclick="() => SetSource(MusicSource.MusicBrainz)">MusicBrainz</button>
+    <button class="btn btn-sm @(activeSource == MusicSource.Discogs ? "btn-primary" : "btn-outline-secondary")" @onclick="() => SetSource(MusicSource.Discogs)">Discogs</button>
+    <button class="btn btn-sm @(activeSource == MusicSource.iTunes ? "btn-primary" : "btn-outline-secondary")" @onclick="() => SetSource(MusicSource.iTunes)">iTunes</button>
+    <button class="btn btn-sm @(activeSource == MusicSource.Deezer ? "btn-primary" : "btn-outline-secondary")" @onclick="() => SetSource(MusicSource.Deezer)">Deezer</button>
+</div>
+
+@if (activeSource == MusicSource.Discogs && !DiscogsService.IsConfigured)
+{
+    <div class="alert alert-danger" role="alert">
+        Discogs token not configured. Add your personal access token to <code>appsettings.json</code> under <code>Discogs:Token</code>.
+        Get one at <a href="https://www.discogs.com/settings/developers" target="_blank">discogs.com/settings/developers</a>.
+    </div>
+}
+else
+{
+    <div class="mb-2">
+        <label class="form-label" for="artistSearch">Artist name</label>
+        <div class="d-flex gap-2">
+            <input id="artistSearch" class="form-control" @bind="searchQuery" @onkeydown="OnSearchKeyDown" placeholder="e.g. Surfits" />
+            <button class="btn btn-primary" @onclick="SearchArtists" disabled="@isLoading">Search</button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="alert alert-success" role="alert">@successMessage</div>
+    }
+
+    @if (isLoading)
+    {
+        <p class="text-muted">Loading…</p>
+    }
+    else if (artists is not null)
+    {
+        if (artists.Count == 0)
+        {
+            <p>No artists found for "<strong>@searchQuery</strong>".</p>
+        }
+        else
+        {
+            <h3>Artists</h3>
+            <ul class="import-list">
+                @foreach (var artist in artists)
+                {
+                    <li class="import-list-item @(selectedArtist?.Id == artist.Id ? "import-list-item--active" : "")"
+                        @onclick="() => SelectArtist(artist)">
+                        <span class="fw-semibold">@artist.Name</span>
+                        @if (!string.IsNullOrWhiteSpace(artist.Disambiguation))
+                        {
+                            <span class="text-muted"> — @artist.Disambiguation</span>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    }
+
+    @if (albums is not null)
+    {
+        <h3>Albums — @selectedArtist!.Name</h3>
+        @if (albums.Count == 0)
+        {
+            <p>No official albums found for this artist.</p>
+        }
+        else
+        {
+            <ul class="import-list">
+                @foreach (var album in albums)
+                {
+                    <li class="import-list-item d-flex justify-content-between align-items-center">
+                        <span>
+                            <span class="fw-semibold">@album.Title</span>
+                            @if (album.Year is not null)
+                            {
+                                <span class="text-muted"> (@album.Year)</span>
+                            }
+                        </span>
+                        <button class="btn btn-sm @(importedAlbumIds.Contains(album.Id) ? "btn-success" : "btn-outline-primary")"
+                                @onclick="() => ImportAlbum(album)"
+                                disabled="@(importingAlbumId == album.Id)">
+                            @if (importingAlbumId == album.Id)
+                            {
+                                <span>Importing…</span>
+                            }
+                            else if (importedAlbumIds.Contains(album.Id))
+                            {
+                                <span>Imported ✓</span>
+                            }
+                            else
+                            {
+                                <span>Import</span>
+                            }
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+    }
+}
+
+@code {
+    private string searchQuery = string.Empty;
+    private bool isLoading;
+    private string? errorMessage;
+    private string? successMessage;
+    private IReadOnlyList<ArtistResult>? artists;
+    private ArtistResult? selectedArtist;
+    private IReadOnlyList<AlbumResult>? albums;
+    private string? importingAlbumId;
+    private readonly HashSet<string> importedAlbumIds = [];
+    private MusicSource activeSource = MusicSource.MusicBrainz;
+
+    private enum MusicSource { MusicBrainz, Discogs, iTunes, Deezer }
+
+    private IMusicSearchService ActiveSource => activeSource switch
+    {
+        MusicSource.Discogs => DiscogsService,
+        MusicSource.iTunes => ITunesService,
+        MusicSource.Deezer => DeezerService,
+        _ => MusicBrainzService
+    };
+
+    private void SetSource(MusicSource source)
+    {
+        activeSource = source;
+        artists = null;
+        albums = null;
+        selectedArtist = null;
+        searchQuery = string.Empty;
+        errorMessage = null;
+        successMessage = null;
+    }
+
+    private void RemoveImportedAlbum(Guid albumId)
+    {
+        SetlistService.RemoveAlbum(albumId);
+        errorMessage = null;
+        successMessage = null;
+    }
+
+    private async Task OnSearchKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await SearchArtists();
+    }
+
+    private async Task SearchArtists()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery)) return;
+
+        errorMessage = null;
+        successMessage = null;
+        artists = null;
+        albums = null;
+        selectedArtist = null;
+        isLoading = true;
+
+        try
+        {
+            artists = await ActiveSource.SearchArtistsAsync(searchQuery.Trim());
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Search failed: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SelectArtist(ArtistResult artist)
+    {
+        selectedArtist = artist;
+        albums = null;
+        errorMessage = null;
+        successMessage = null;
+        isLoading = true;
+
+        try
+        {
+            albums = await ActiveSource.GetArtistAlbumsAsync(artist.Id);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load albums: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task ImportAlbum(AlbumResult albumResult)
+    {
+        errorMessage = null;
+        successMessage = null;
+        importingAlbumId = albumResult.Id;
+
+        try
+        {
+            var album = await ActiveSource.GetAlbumWithTracksAsync(albumResult.Id, albumResult.Title);
+            SetlistService.ImportAlbum(album);
+            importedAlbumIds.Add(albumResult.Id);
+            successMessage = $"\"{albumResult.Title}\" imported with {album.Songs.Count} songs.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Import failed: {ex.Message}";
+        }
+        finally
+        {
+            importingAlbumId = null;
+        }
+    }
+}
