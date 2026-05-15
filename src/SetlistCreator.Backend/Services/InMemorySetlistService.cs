@@ -4,7 +4,7 @@ namespace SetlistCreator.Backend.Services;
 
 public sealed class InMemorySetlistService : ISetlistService
 {
-    private readonly IReadOnlyList<Album> _albums;
+    private readonly List<Album> _albums;
     private readonly List<Setlist> _savedSetlists = [];
 
     public InMemorySetlistService()
@@ -33,6 +33,13 @@ public sealed class InMemorySetlistService : ISetlistService
     public IReadOnlyList<Album> GetAlbums() => _albums;
 
     public IReadOnlyList<Song> GetSongsForAlbum(Guid albumId) => _albums.FirstOrDefault(a => a.Id == albumId)?.Songs ?? [];
+
+    public void ImportAlbum(Album album)
+    {
+        ArgumentNullException.ThrowIfNull(album);
+        _albums.RemoveAll(a => a.Id == album.Id);
+        _albums.Add(album);
+    }
 
     public Song CreateManualSong(string title, TimeSpan duration)
     {

@@ -8,6 +8,8 @@ public interface ISetlistService
 
     IReadOnlyList<Song> GetSongsForAlbum(Guid albumId);
 
+    void ImportAlbum(Album album);
+
     Song CreateManualSong(string title, TimeSpan duration);
 
     void AddSong(Setlist setlist, Song song);

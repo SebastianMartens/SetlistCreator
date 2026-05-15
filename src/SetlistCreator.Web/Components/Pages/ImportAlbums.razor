@@ -1,0 +1,188 @@
+@page "/import"
+@rendermode InteractiveServer
+@using SetlistCreator.Backend.Models
+@using SetlistCreator.Backend.Services
+@using SetlistCreator.Web.Services
+@inject ISetlistService SetlistService
+@inject IMusicSearchService MusicSearchService
+
+<PageTitle>Import Albums</PageTitle>
+
+<h1>Import Albums</h1>
+<p>Search for an artist on MusicBrainz and import their albums.</p>
+
+<div class="mb-2">
+    <label class="form-label" for="artistSearch">Artist name</label>
+    <div class="d-flex gap-2">
+        <input id="artistSearch" class="form-control" @bind="searchQuery" @onkeydown="OnSearchKeyDown" placeholder="e.g. Surfits" />
+        <button class="btn btn-primary" @onclick="SearchArtists" disabled="@isLoading">Search</button>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+@if (isLoading)
+{
+    <p class="text-muted">Loading…</p>
+}
+else if (artists is not null)
+{
+    if (artists.Count == 0)
+    {
+        <p>No artists found for "<strong>@searchQuery</strong>".</p>
+    }
+    else
+    {
+        <h2>Artists</h2>
+        <ul class="import-list">
+            @foreach (var artist in artists)
+            {
+                <li class="import-list-item @(selectedArtist?.Id == artist.Id ? "import-list-item--active" : "")"
+                    @onclick="() => SelectArtist(artist)">
+                    <span class="fw-semibold">@artist.Name</span>
+                    @if (!string.IsNullOrWhiteSpace(artist.Disambiguation))
+                    {
+                        <span class="text-muted"> — @artist.Disambiguation</span>
+                    }
+                </li>
+            }
+        </ul>
+    }
+}
+
+@if (albums is not null)
+{
+    <h2>Albums — @selectedArtist!.Name</h2>
+    @if (albums.Count == 0)
+    {
+        <p>No official albums found for this artist.</p>
+    }
+    else
+    {
+        <ul class="import-list">
+            @foreach (var album in albums)
+            {
+                <li class="import-list-item d-flex justify-content-between align-items-center">
+                    <span>
+                        <span class="fw-semibold">@album.Title</span>
+                        @if (album.Year is not null)
+                        {
+                            <span class="text-muted"> (@album.Year)</span>
+                        }
+                    </span>
+                    <button class="btn btn-sm @(importedAlbumIds.Contains(album.Id) ? "btn-success" : "btn-outline-primary")"
+                            @onclick="() => ImportAlbum(album)"
+                            disabled="@(importingAlbumId == album.Id)">
+                        @if (importingAlbumId == album.Id)
+                        {
+                            <span>Importing…</span>
+                        }
+                        else if (importedAlbumIds.Contains(album.Id))
+                        {
+                            <span>Imported ✓</span>
+                        }
+                        else
+                        {
+                            <span>Import</span>
+                        }
+                    </button>
+                </li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    private string searchQuery = string.Empty;
+    private bool isLoading;
+    private string? errorMessage;
+    private string? successMessage;
+    private IReadOnlyList<ArtistResult>? artists;
+    private ArtistResult? selectedArtist;
+    private IReadOnlyList<AlbumResult>? albums;
+    private string? importingAlbumId;
+    private readonly HashSet<string> importedAlbumIds = [];
+
+    private async Task OnSearchKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await SearchArtists();
+    }
+
+    private async Task SearchArtists()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery)) return;
+
+        errorMessage = null;
+        successMessage = null;
+        artists = null;
+        albums = null;
+        selectedArtist = null;
+        isLoading = true;
+
+        try
+        {
+            artists = await MusicSearchService.SearchArtistsAsync(searchQuery.Trim());
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Search failed: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SelectArtist(ArtistResult artist)
+    {
+        selectedArtist = artist;
+        albums = null;
+        errorMessage = null;
+        successMessage = null;
+        isLoading = true;
+
+        try
+        {
+            albums = await MusicSearchService.GetArtistAlbumsAsync(artist.Id);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load albums: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task ImportAlbum(AlbumResult albumResult)
+    {
+        errorMessage = null;
+        successMessage = null;
+        importingAlbumId = albumResult.Id;
+
+        try
+        {
+            var album = await MusicSearchService.GetAlbumWithTracksAsync(albumResult.Id, albumResult.Title);
+            SetlistService.ImportAlbum(album);
+            importedAlbumIds.Add(albumResult.Id);
+            successMessage = $"\"{albumResult.Title}\" imported with {album.Songs.Count} songs.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Import failed: {ex.Message}";
+        }
+        finally
+        {
+            importingAlbumId = null;
+        }
+    }
+}

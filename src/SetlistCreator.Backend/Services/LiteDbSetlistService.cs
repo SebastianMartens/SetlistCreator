@@ -19,6 +19,12 @@ public sealed class LiteDbSetlistService : ISetlistService
         }
 
         _connectionString = $"Filename={resolvedPath};Connection=shared";
+
+        using var database = new LiteDatabase(_connectionString);
+        foreach (var doc in database.GetCollection<AlbumDocument>("albums").FindAll())
+        {
+            _baseService.ImportAlbum(ToAlbumModel(doc));
+        }
     }
 
     public IReadOnlyList<Album> GetAlbums() => _baseService.GetAlbums();
@@ -26,6 +32,14 @@ public sealed class LiteDbSetlistService : ISetlistService
     public IReadOnlyList<Song> GetSongsForAlbum(Guid albumId) => _baseService.GetSongsForAlbum(albumId);
 
     public Song CreateManualSong(string title, TimeSpan duration) => _baseService.CreateManualSong(title, duration);
+
+    public void ImportAlbum(Album album)
+    {
+        ArgumentNullException.ThrowIfNull(album);
+        _baseService.ImportAlbum(album);
+        using var database = new LiteDatabase(_connectionString);
+        database.GetCollection<AlbumDocument>("albums").Upsert(ToAlbumDocument(album));
+    }
 
     public void AddSong(Setlist setlist, Song song) => _baseService.AddSong(setlist, song);
 
@@ -134,6 +148,46 @@ public sealed class LiteDbSetlistService : ISetlistService
         }
 
         return setlist;
+    }
+
+    private static AlbumDocument ToAlbumDocument(Album album) => new()
+    {
+        Id = album.Id,
+        Name = album.Name,
+        Songs = album.Songs.Select(s => new SongDocument
+        {
+            Id = s.Id,
+            Title = s.Title,
+            DurationTicks = s.Duration.Ticks,
+            AlbumName = s.AlbumName
+        }).ToList()
+    };
+
+    private static Album ToAlbumModel(AlbumDocument doc)
+    {
+        var songs = doc.Songs.Select(s => new Song(s.Id, s.Title, TimeSpan.FromTicks(s.DurationTicks), s.AlbumName)).ToList();
+        return new Album(doc.Id, doc.Name, songs);
+    }
+
+    private sealed class AlbumDocument
+    {
+        [BsonId]
+        public Guid Id { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+
+        public List<SongDocument> Songs { get; set; } = [];
+    }
+
+    private sealed class SongDocument
+    {
+        public Guid Id { get; set; }
+
+        public string Title { get; set; } = string.Empty;
+
+        public long DurationTicks { get; set; }
+
+        public string? AlbumName { get; set; }
     }
 
     private sealed class SetlistDocument
