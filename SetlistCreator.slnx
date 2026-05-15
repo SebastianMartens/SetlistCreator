@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SetlistCreator.Backend/SetlistCreator.Backend.csproj" />
+    <Project Path="src/SetlistCreator.Web/SetlistCreator.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SetlistCreator.Backend.Tests/SetlistCreator.Backend.Tests.csproj" />
+  </Folder>
+</Solution>

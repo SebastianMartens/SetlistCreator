@@ -1,0 +1,170 @@
+@page "/"
+@rendermode InteractiveServer
+@using SetlistCreator.Backend.Models
+@using SetlistCreator.Backend.Services
+@inject ISetlistService SetlistService
+
+<PageTitle>Setlist Creator</PageTitle>
+
+<h1>Setlist Creator</h1>
+
+<p>Create a live show setlist by adding songs from albums, adding manual songs, and inserting breaks.</p>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <h2>Album songs</h2>
+        <div class="mb-2">
+            <label class="form-label" for="albumSelect">Album</label>
+            <select id="albumSelect" class="form-select" @bind="selectedAlbumId" @bind:after="OnAlbumChanged">
+                @foreach (var album in albums)
+                {
+                    <option value="@album.Id">@album.Name</option>
+                }
+            </select>
+        </div>
+        <div class="mb-2">
+            <label class="form-label" for="songSelect">Song</label>
+            <select id="songSelect" class="form-select" @bind="selectedSongId">
+                @foreach (var song in albumSongs)
+                {
+                    <option value="@song.Id">@song.Title (@FormatDuration(song.Duration))</option>
+                }
+            </select>
+        </div>
+        <button class="btn btn-primary" @onclick="AddSongFromAlbum">Add selected song</button>
+    </div>
+
+    <div class="col-md-6">
+        <h2>Manual song</h2>
+        <div class="mb-2">
+            <label class="form-label" for="manualSongTitle">Song title</label>
+            <input id="manualSongTitle" class="form-control" @bind="manualSongTitle" />
+        </div>
+        <div class="mb-2">
+            <label class="form-label" for="manualSongMinutes">Duration (minutes)</label>
+            <input id="manualSongMinutes" class="form-control" type="number" min="1" @bind="manualSongMinutes" />
+        </div>
+        <button class="btn btn-outline-primary" @onclick="AddManualSong">Add manual song</button>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-md-6">
+        <h2>Break</h2>
+        <div class="mb-2">
+            <label class="form-label" for="breakName">Break name</label>
+            <input id="breakName" class="form-control" @bind="breakName" />
+        </div>
+        <div class="mb-2">
+            <label class="form-label" for="breakMinutes">Duration (minutes)</label>
+            <input id="breakMinutes" class="form-control" type="number" min="1" @bind="breakMinutes" />
+        </div>
+        <button class="btn btn-outline-secondary" @onclick="AddBreak">Add break</button>
+    </div>
+
+    <div class="col-md-6">
+        <h2>Current setlist</h2>
+        @if (setlist.Items.Count == 0)
+        {
+            <p>No items added yet.</p>
+        }
+        else
+        {
+            <ol class="list-group list-group-numbered">
+                @foreach (var item in setlist.Items)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>@item.Name <small class="text-muted">(@item.Type)</small></span>
+                        <span>@FormatDuration(item.Duration)</span>
+                    </li>
+                }
+            </ol>
+        }
+        <p class="fw-bold mt-2">Total duration (songs + breaks): @FormatDuration(SetlistService.CalculateTotalDuration(setlist))</p>
+    </div>
+</div>
+
+@code {
+    private IReadOnlyList<Album> albums = [];
+    private IReadOnlyList<Song> albumSongs = [];
+    private Setlist setlist = new();
+    private Guid selectedAlbumId;
+    private Guid selectedSongId;
+    private string manualSongTitle = string.Empty;
+    private int manualSongMinutes = 4;
+    private string breakName = "Break";
+    private int breakMinutes = 10;
+    private string? errorMessage;
+
+    protected override void OnInitialized()
+    {
+        albums = SetlistService.GetAlbums();
+
+        if (albums.Count == 0)
+        {
+            return;
+        }
+
+        selectedAlbumId = albums[0].Id;
+        UpdateAlbumSongs();
+    }
+
+    private void OnAlbumChanged() => UpdateAlbumSongs();
+
+    private void UpdateAlbumSongs()
+    {
+        albumSongs = SetlistService.GetSongsForAlbum(selectedAlbumId);
+        selectedSongId = albumSongs.FirstOrDefault()?.Id ?? Guid.Empty;
+    }
+
+    private void AddSongFromAlbum()
+    {
+        errorMessage = null;
+
+        var song = albumSongs.FirstOrDefault(s => s.Id == selectedSongId);
+        if (song is null)
+        {
+            errorMessage = "Please select a song to add.";
+            return;
+        }
+
+        SetlistService.AddSong(setlist, song);
+    }
+
+    private void AddManualSong()
+    {
+        errorMessage = null;
+
+        try
+        {
+            var manualSong = SetlistService.CreateManualSong(manualSongTitle, TimeSpan.FromMinutes(manualSongMinutes));
+            SetlistService.AddSong(setlist, manualSong);
+            manualSongTitle = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void AddBreak()
+    {
+        errorMessage = null;
+
+        try
+        {
+            SetlistService.AddBreak(setlist, breakName, TimeSpan.FromMinutes(breakMinutes));
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private static string FormatDuration(TimeSpan duration) => $"{(int)duration.TotalMinutes:00}:{duration.Seconds:00}";
+}
