@@ -310,6 +310,10 @@ h1:focus {
 
 /* ---- Setlist-specific ---- */
 
+.setlist-print-header {
+    display: none;
+}
+
 .setlist-break-line {
     display: flex;
     align-items: center;
@@ -325,6 +329,22 @@ h1:focus {
 @media print {
     .setlist-no-print {
         display: none !important;
+    }
+
+    .setlist-print-header {
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    .setlist-print-header h2 {
+        margin: 0;
+        font-size: 2rem;
+    }
+
+    .setlist-print-header p {
+        margin: 0.25rem 0 0;
+        font-size: 1.1rem;
+        color: #444;
     }
 
     .setlist-print-content {

@@ -83,6 +83,13 @@
                 Print setlist
             </button>
         </div>
+        <div class="setlist-print-header">
+            <h2>@(string.IsNullOrWhiteSpace(setlist.VenueName) ? "Setlist" : setlist.VenueName)</h2>
+            @if (setlist.GigDate.HasValue)
+            {
+                <p>@setlist.GigDate.Value.ToString("d MMMM yyyy")</p>
+            }
+        </div>
         <div class="mb-2 setlist-no-print">
             <label class="form-label" for="venueName">Venue name</label>
             <input id="venueName" class="form-control" @bind="setlist.VenueName" />
