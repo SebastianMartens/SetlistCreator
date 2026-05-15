@@ -64,6 +64,14 @@ public sealed class LiteDbSetlistServiceTests : IDisposable
     }
 
     [Fact]
+    public void GetSavedSetlist_ThrowsForMissingSetlist()
+    {
+        var service = new LiteDbSetlistService(_databasePath);
+
+        Assert.Throws<KeyNotFoundException>(() => service.GetSavedSetlist(Guid.NewGuid()));
+    }
+
+    [Fact]
     public void UpdateAndDeleteSavedSetlist_ChangesPersistence()
     {
         var service = new LiteDbSetlistService(_databasePath);
