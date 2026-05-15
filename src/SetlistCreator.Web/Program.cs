@@ -21,6 +21,16 @@ builder.Services.AddHttpClient<DiscogsService>(client =>
     if (!string.IsNullOrWhiteSpace(discogsToken))
         client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", $"Discogs token={discogsToken}");
 });
+builder.Services.AddHttpClient<ITunesService>(client =>
+{
+    client.BaseAddress = new Uri("https://itunes.apple.com/");
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("SetlistCreator/1.0 (+https://github.com/example/SetlistCreator)");
+});
+builder.Services.AddHttpClient<DeezerService>(client =>
+{
+    client.BaseAddress = new Uri("https://api.deezer.com/");
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("SetlistCreator/1.0 (+https://github.com/example/SetlistCreator)");
+});
 
 var app = builder.Build();
 

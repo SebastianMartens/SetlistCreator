@@ -6,6 +6,8 @@
 @inject ISetlistService SetlistService
 @inject MusicBrainzService MusicBrainzService
 @inject DiscogsService DiscogsService
+@inject ITunesService ITunesService
+@inject DeezerService DeezerService
 
 <PageTitle>Import Albums</PageTitle>
 
@@ -39,11 +41,13 @@ else
 <h2>Search &amp; import</h2>
 
 <div class="d-flex gap-2 mb-2">
-    <button class="btn btn-sm @(!useDiscogs ? "btn-primary" : "btn-outline-secondary")" @onclick="() => SetSource(false)">MusicBrainz</button>
-    <button class="btn btn-sm @(useDiscogs ? "btn-primary" : "btn-outline-secondary")" @onclick="() => SetSource(true)">Discogs</button>
+    <button class="btn btn-sm @(activeSource == MusicSource.MusicBrainz ? "btn-primary" : "btn-outline-secondary")" @onclick="() => SetSource(MusicSource.MusicBrainz)">MusicBrainz</button>
+    <button class="btn btn-sm @(activeSource == MusicSource.Discogs ? "btn-primary" : "btn-outline-secondary")" @onclick="() => SetSource(MusicSource.Discogs)">Discogs</button>
+    <button class="btn btn-sm @(activeSource == MusicSource.iTunes ? "btn-primary" : "btn-outline-secondary")" @onclick="() => SetSource(MusicSource.iTunes)">iTunes</button>
+    <button class="btn btn-sm @(activeSource == MusicSource.Deezer ? "btn-primary" : "btn-outline-secondary")" @onclick="() => SetSource(MusicSource.Deezer)">Deezer</button>
 </div>
 
-@if (useDiscogs && !DiscogsService.IsConfigured)
+@if (activeSource == MusicSource.Discogs && !DiscogsService.IsConfigured)
 {
     <div class="alert alert-danger" role="alert">
         Discogs token not configured. Add your personal access token to <code>appsettings.json</code> under <code>Discogs:Token</code>.
@@ -152,13 +156,21 @@ else
     private IReadOnlyList<AlbumResult>? albums;
     private string? importingAlbumId;
     private readonly HashSet<string> importedAlbumIds = [];
-    private bool useDiscogs;
+    private MusicSource activeSource = MusicSource.MusicBrainz;
 
-    private IMusicSearchService ActiveSource => useDiscogs ? DiscogsService : MusicBrainzService;
+    private enum MusicSource { MusicBrainz, Discogs, iTunes, Deezer }
 
-    private void SetSource(bool discogs)
+    private IMusicSearchService ActiveSource => activeSource switch
     {
-        useDiscogs = discogs;
+        MusicSource.Discogs => DiscogsService,
+        MusicSource.iTunes => ITunesService,
+        MusicSource.Deezer => DeezerService,
+        _ => MusicBrainzService
+    };
+
+    private void SetSource(MusicSource source)
+    {
+        activeSource = source;
         artists = null;
         albums = null;
         selectedArtist = null;
