@@ -18,7 +18,7 @@
 
 @if (!string.IsNullOrWhiteSpace(successMessage))
 {
-    <div class="alert alert-success" role="alert">@successMessage</div>
+    <div class="alert alert-success d-print-none" role="alert">@successMessage</div>
 }
 
 <div class="row g-4 setlist-no-print">
@@ -114,7 +114,7 @@
                 }
             </ul>
         }
-        <button class="btn btn-success mt-2" @onclick="SaveSetlist" disabled="@(setlist.Items.Count == 0)">Save setlist</button>
+        <button class="btn btn-success mt-2 d-print-none" @onclick="SaveSetlist" disabled="@(setlist.Items.Count == 0)">Save setlist</button>
         <p class="fw-bold mt-2 setlist-no-print">Total duration (songs + breaks): @FormatDuration(SetlistService.CalculateTotalDuration(setlist))</p>
     </div>
 </div>
