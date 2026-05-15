@@ -13,7 +13,13 @@
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
-    <div class="alert alert-danger setlist-no-print" role="alert">@errorMessage</div>
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success d-print-none" role="alert">@successMessage</div>
+    <div class="alert alert-success setlist-no-print" role="alert">@successMessage</div>
 }
 
 <div class="row g-4 setlist-no-print">
@@ -78,6 +84,14 @@
                 Print setlist
             </button>
         </div>
+        <div class="mb-2 setlist-no-print">
+            <label class="form-label" for="venueName">Venue name</label>
+            <input id="venueName" class="form-control" @bind="setlist.VenueName" />
+        </div>
+        <div class="mb-2 setlist-no-print">
+            <label class="form-label" for="gigDate">Gig date</label>
+            <InputDate id="gigDate" class="form-control" @bind-Value="setlist.GigDate" />
+        </div>
         @if (setlist.Items.Count == 0)
         {
             <p>No items added yet.</p>
@@ -109,11 +123,16 @@
                 }
             </ul>
         }
+        <button class="btn btn-success mt-2 setlist-no-print" @onclick="SaveSetlist" disabled="@(setlist.Items.Count == 0)">Save setlist</button>
         <p class="fw-bold mt-2 setlist-no-print">Total duration (songs + breaks): @FormatDuration(SetlistService.CalculateTotalDuration(setlist))</p>
     </div>
 </div>
 
 @code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "setlistId")]
+    public Guid? SetlistId { get; set; }
+
     private IReadOnlyList<Album> albums = [];
     private IReadOnlyList<Song> albumSongs = [];
     private Setlist setlist = new();
@@ -124,6 +143,8 @@
     private string breakName = "Break";
     private int breakMinutes = 10;
     private string? errorMessage;
+    private string? successMessage;
+    private Guid? loadedSetlistId;
 
     protected override void OnInitialized()
     {
@@ -140,6 +161,32 @@
 
     private void OnAlbumChanged() => UpdateAlbumSongs();
 
+    protected override void OnParametersSet()
+    {
+        if (SetlistId is not Guid setlistId || loadedSetlistId == setlistId)
+        {
+            return;
+        }
+
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            setlist = SetlistService.GetSavedSetlist(setlistId);
+            loadedSetlistId = setlistId;
+            successMessage = "Saved setlist opened in builder.";
+        }
+        catch (KeyNotFoundException)
+        {
+            errorMessage = "Unable to load setlist. It may have been deleted or does not exist.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
     private void UpdateAlbumSongs()
     {
         albumSongs = SetlistService.GetSongsForAlbum(selectedAlbumId);
@@ -149,6 +196,7 @@
     private void AddSongFromAlbum()
     {
         errorMessage = null;
+        successMessage = null;
 
         var song = albumSongs.FirstOrDefault(s => s.Id == selectedSongId);
         if (song is null)
@@ -163,6 +211,7 @@
     private void AddManualSong()
     {
         errorMessage = null;
+        successMessage = null;
 
         try
         {
@@ -179,10 +228,28 @@
     private void AddBreak()
     {
         errorMessage = null;
+        successMessage = null;
 
         try
         {
             SetlistService.AddBreak(setlist, breakName, TimeSpan.FromMinutes(breakMinutes));
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void SaveSetlist()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            SetlistService.SaveSetlist(setlist);
+            loadedSetlistId = setlist.Id;
+            successMessage = "Setlist saved.";
         }
         catch (Exception ex)
         {
