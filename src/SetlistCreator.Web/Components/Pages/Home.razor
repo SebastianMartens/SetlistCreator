@@ -153,6 +153,10 @@
             loadedSetlistId = setlistId;
             successMessage = "Saved setlist opened in builder.";
         }
+        catch (KeyNotFoundException)
+        {
+            errorMessage = "Unable to load setlist. It may have been deleted or does not exist.";
+        }
         catch (Exception ex)
         {
             errorMessage = ex.Message;
