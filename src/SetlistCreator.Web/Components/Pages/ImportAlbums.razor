@@ -9,6 +9,33 @@
 <PageTitle>Import Albums</PageTitle>
 
 <h1>Import Albums</h1>
+
+@{
+    var importedAlbums = SetlistService.GetAlbums();
+}
+
+<h2>Imported albums</h2>
+@if (importedAlbums.Count == 0)
+{
+    <p class="text-muted">No albums imported yet.</p>
+}
+else
+{
+    <ul class="import-list mb-2">
+        @foreach (var album in importedAlbums.OrderBy(a => a.Name))
+        {
+            <li class="import-list-item d-flex justify-content-between align-items-center">
+                <span>
+                    <span class="fw-semibold">@album.Name</span>
+                    <span class="text-muted"> — @album.Songs.Count songs</span>
+                </span>
+                <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveImportedAlbum(album.Id)">Remove</button>
+            </li>
+        }
+    </ul>
+}
+
+<h2>Search &amp; import</h2>
 <p>Search for an artist on MusicBrainz and import their albums.</p>
 
 <div class="mb-2">
@@ -110,6 +137,13 @@ else if (artists is not null)
     private IReadOnlyList<AlbumResult>? albums;
     private string? importingAlbumId;
     private readonly HashSet<string> importedAlbumIds = [];
+
+    private void RemoveImportedAlbum(Guid albumId)
+    {
+        SetlistService.RemoveAlbum(albumId);
+        errorMessage = null;
+        successMessage = null;
+    }
 
     private async Task OnSearchKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
     {

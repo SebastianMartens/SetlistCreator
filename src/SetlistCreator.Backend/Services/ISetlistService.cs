@@ -10,6 +10,8 @@ public interface ISetlistService
 
     void ImportAlbum(Album album);
 
+    void RemoveAlbum(Guid albumId);
+
     Song CreateManualSong(string title, TimeSpan duration);
 
     void AddSong(Setlist setlist, Song song);

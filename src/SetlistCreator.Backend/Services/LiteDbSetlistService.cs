@@ -41,6 +41,13 @@ public sealed class LiteDbSetlistService : ISetlistService
         database.GetCollection<AlbumDocument>("albums").Upsert(ToAlbumDocument(album));
     }
 
+    public void RemoveAlbum(Guid albumId)
+    {
+        _baseService.RemoveAlbum(albumId);
+        using var database = new LiteDatabase(_connectionString);
+        database.GetCollection<AlbumDocument>("albums").Delete(albumId);
+    }
+
     public void AddSong(Setlist setlist, Song song) => _baseService.AddSong(setlist, song);
 
     public void AddBreak(Setlist setlist, string name, TimeSpan duration) => _baseService.AddBreak(setlist, name, duration);
@@ -210,4 +217,5 @@ public sealed class LiteDbSetlistService : ISetlistService
 
         public long DurationTicks { get; set; }
     }
+
 }

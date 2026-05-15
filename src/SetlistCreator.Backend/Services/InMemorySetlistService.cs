@@ -9,25 +9,7 @@ public sealed class InMemorySetlistService : ISetlistService
 
     public InMemorySetlistService()
     {
-        var firstAlbumSongs = new List<Song>
-        {
-            new(Guid.Parse("11111111-1111-1111-1111-111111111111"), "City Lights", TimeSpan.FromMinutes(4.5), "First Light"),
-            new(Guid.Parse("22222222-2222-2222-2222-222222222222"), "Echoes", TimeSpan.FromMinutes(5), "First Light"),
-            new(Guid.Parse("33333333-3333-3333-3333-333333333333"), "Falling Stars", TimeSpan.FromMinutes(3.75), "First Light")
-        };
-
-        var secondAlbumSongs = new List<Song>
-        {
-            new(Guid.Parse("44444444-4444-4444-4444-444444444444"), "Runaway Train", TimeSpan.FromMinutes(4), "Night Drive"),
-            new(Guid.Parse("55555555-5555-5555-5555-555555555555"), "Neon Roads", TimeSpan.FromMinutes(4.25), "Night Drive"),
-            new(Guid.Parse("66666666-6666-6666-6666-666666666666"), "Last Encore", TimeSpan.FromMinutes(6), "Night Drive")
-        };
-
-        _albums =
-        [
-            new(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), "First Light", firstAlbumSongs),
-            new(Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"), "Night Drive", secondAlbumSongs)
-        ];
+        _albums = [];
     }
 
     public IReadOnlyList<Album> GetAlbums() => _albums;
@@ -40,6 +22,8 @@ public sealed class InMemorySetlistService : ISetlistService
         _albums.RemoveAll(a => a.Id == album.Id);
         _albums.Add(album);
     }
+
+    public void RemoveAlbum(Guid albumId) => _albums.RemoveAll(a => a.Id == albumId);
 
     public Song CreateManualSong(string title, TimeSpan duration)
     {
