@@ -4,7 +4,8 @@
 @using SetlistCreator.Backend.Services
 @using SetlistCreator.Web.Services
 @inject ISetlistService SetlistService
-@inject IMusicSearchService MusicSearchService
+@inject MusicBrainzService MusicBrainzService
+@inject DiscogsService DiscogsService
 
 <PageTitle>Import Albums</PageTitle>
 
@@ -36,94 +37,108 @@ else
 }
 
 <h2>Search &amp; import</h2>
-<p>Search for an artist on MusicBrainz and import their albums.</p>
 
-<div class="mb-2">
-    <label class="form-label" for="artistSearch">Artist name</label>
-    <div class="d-flex gap-2">
-        <input id="artistSearch" class="form-control" @bind="searchQuery" @onkeydown="OnSearchKeyDown" placeholder="e.g. Surfits" />
-        <button class="btn btn-primary" @onclick="SearchArtists" disabled="@isLoading">Search</button>
-    </div>
+<div class="d-flex gap-2 mb-2">
+    <button class="btn btn-sm @(!useDiscogs ? "btn-primary" : "btn-outline-secondary")" @onclick="() => SetSource(false)">MusicBrainz</button>
+    <button class="btn btn-sm @(useDiscogs ? "btn-primary" : "btn-outline-secondary")" @onclick="() => SetSource(true)">Discogs</button>
 </div>
 
-@if (!string.IsNullOrWhiteSpace(errorMessage))
+@if (useDiscogs && !DiscogsService.IsConfigured)
 {
-    <div class="alert alert-danger" role="alert">@errorMessage</div>
+    <div class="alert alert-danger" role="alert">
+        Discogs token not configured. Add your personal access token to <code>appsettings.json</code> under <code>Discogs:Token</code>.
+        Get one at <a href="https://www.discogs.com/settings/developers" target="_blank">discogs.com/settings/developers</a>.
+    </div>
 }
+else
+{
+    <div class="mb-2">
+        <label class="form-label" for="artistSearch">Artist name</label>
+        <div class="d-flex gap-2">
+            <input id="artistSearch" class="form-control" @bind="searchQuery" @onkeydown="OnSearchKeyDown" placeholder="e.g. Surfits" />
+            <button class="btn btn-primary" @onclick="SearchArtists" disabled="@isLoading">Search</button>
+        </div>
+    </div>
 
-@if (!string.IsNullOrWhiteSpace(successMessage))
-{
-    <div class="alert alert-success" role="alert">@successMessage</div>
-}
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+    }
 
-@if (isLoading)
-{
-    <p class="text-muted">Loading…</p>
-}
-else if (artists is not null)
-{
-    if (artists.Count == 0)
+    @if (!string.IsNullOrWhiteSpace(successMessage))
     {
-        <p>No artists found for "<strong>@searchQuery</strong>".</p>
+        <div class="alert alert-success" role="alert">@successMessage</div>
     }
-    else
-    {
-        <h2>Artists</h2>
-        <ul class="import-list">
-            @foreach (var artist in artists)
-            {
-                <li class="import-list-item @(selectedArtist?.Id == artist.Id ? "import-list-item--active" : "")"
-                    @onclick="() => SelectArtist(artist)">
-                    <span class="fw-semibold">@artist.Name</span>
-                    @if (!string.IsNullOrWhiteSpace(artist.Disambiguation))
-                    {
-                        <span class="text-muted"> — @artist.Disambiguation</span>
-                    }
-                </li>
-            }
-        </ul>
-    }
-}
 
-@if (albums is not null)
-{
-    <h2>Albums — @selectedArtist!.Name</h2>
-    @if (albums.Count == 0)
+    @if (isLoading)
     {
-        <p>No official albums found for this artist.</p>
+        <p class="text-muted">Loading…</p>
     }
-    else
+    else if (artists is not null)
     {
-        <ul class="import-list">
-            @foreach (var album in albums)
-            {
-                <li class="import-list-item d-flex justify-content-between align-items-center">
-                    <span>
-                        <span class="fw-semibold">@album.Title</span>
-                        @if (album.Year is not null)
+        if (artists.Count == 0)
+        {
+            <p>No artists found for "<strong>@searchQuery</strong>".</p>
+        }
+        else
+        {
+            <h3>Artists</h3>
+            <ul class="import-list">
+                @foreach (var artist in artists)
+                {
+                    <li class="import-list-item @(selectedArtist?.Id == artist.Id ? "import-list-item--active" : "")"
+                        @onclick="() => SelectArtist(artist)">
+                        <span class="fw-semibold">@artist.Name</span>
+                        @if (!string.IsNullOrWhiteSpace(artist.Disambiguation))
                         {
-                            <span class="text-muted"> (@album.Year)</span>
+                            <span class="text-muted"> — @artist.Disambiguation</span>
                         }
-                    </span>
-                    <button class="btn btn-sm @(importedAlbumIds.Contains(album.Id) ? "btn-success" : "btn-outline-primary")"
-                            @onclick="() => ImportAlbum(album)"
-                            disabled="@(importingAlbumId == album.Id)">
-                        @if (importingAlbumId == album.Id)
-                        {
-                            <span>Importing…</span>
-                        }
-                        else if (importedAlbumIds.Contains(album.Id))
-                        {
-                            <span>Imported ✓</span>
-                        }
-                        else
-                        {
-                            <span>Import</span>
-                        }
-                    </button>
-                </li>
-            }
-        </ul>
+                    </li>
+                }
+            </ul>
+        }
+    }
+
+    @if (albums is not null)
+    {
+        <h3>Albums — @selectedArtist!.Name</h3>
+        @if (albums.Count == 0)
+        {
+            <p>No official albums found for this artist.</p>
+        }
+        else
+        {
+            <ul class="import-list">
+                @foreach (var album in albums)
+                {
+                    <li class="import-list-item d-flex justify-content-between align-items-center">
+                        <span>
+                            <span class="fw-semibold">@album.Title</span>
+                            @if (album.Year is not null)
+                            {
+                                <span class="text-muted"> (@album.Year)</span>
+                            }
+                        </span>
+                        <button class="btn btn-sm @(importedAlbumIds.Contains(album.Id) ? "btn-success" : "btn-outline-primary")"
+                                @onclick="() => ImportAlbum(album)"
+                                disabled="@(importingAlbumId == album.Id)">
+                            @if (importingAlbumId == album.Id)
+                            {
+                                <span>Importing…</span>
+                            }
+                            else if (importedAlbumIds.Contains(album.Id))
+                            {
+                                <span>Imported ✓</span>
+                            }
+                            else
+                            {
+                                <span>Import</span>
+                            }
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
     }
 }
 
@@ -137,6 +152,20 @@ else if (artists is not null)
     private IReadOnlyList<AlbumResult>? albums;
     private string? importingAlbumId;
     private readonly HashSet<string> importedAlbumIds = [];
+    private bool useDiscogs;
+
+    private IMusicSearchService ActiveSource => useDiscogs ? DiscogsService : MusicBrainzService;
+
+    private void SetSource(bool discogs)
+    {
+        useDiscogs = discogs;
+        artists = null;
+        albums = null;
+        selectedArtist = null;
+        searchQuery = string.Empty;
+        errorMessage = null;
+        successMessage = null;
+    }
 
     private void RemoveImportedAlbum(Guid albumId)
     {
@@ -163,7 +192,7 @@ else if (artists is not null)
 
         try
         {
-            artists = await MusicSearchService.SearchArtistsAsync(searchQuery.Trim());
+            artists = await ActiveSource.SearchArtistsAsync(searchQuery.Trim());
         }
         catch (Exception ex)
         {
@@ -185,7 +214,7 @@ else if (artists is not null)
 
         try
         {
-            albums = await MusicSearchService.GetArtistAlbumsAsync(artist.Id);
+            albums = await ActiveSource.GetArtistAlbumsAsync(artist.Id);
         }
         catch (Exception ex)
         {
@@ -205,7 +234,7 @@ else if (artists is not null)
 
         try
         {
-            var album = await MusicSearchService.GetAlbumWithTracksAsync(albumResult.Id, albumResult.Title);
+            var album = await ActiveSource.GetAlbumWithTracksAsync(albumResult.Id, albumResult.Title);
             SetlistService.ImportAlbum(album);
             importedAlbumIds.Add(albumResult.Id);
             successMessage = $"\"{albumResult.Title}\" imported with {album.Songs.Count} songs.";
