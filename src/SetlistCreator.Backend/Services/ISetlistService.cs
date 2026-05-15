@@ -15,4 +15,14 @@ public interface ISetlistService
     void AddBreak(Setlist setlist, string name, TimeSpan duration);
 
     TimeSpan CalculateTotalDuration(Setlist setlist);
+
+    Guid SaveSetlist(Setlist setlist);
+
+    IReadOnlyList<Setlist> GetSavedSetlists();
+
+    Setlist CopySavedSetlist(Guid setlistId);
+
+    void UpdateGigInfo(Guid setlistId, string venueName, DateOnly? gigDate);
+
+    void DeleteSavedSetlist(Guid setlistId);
 }

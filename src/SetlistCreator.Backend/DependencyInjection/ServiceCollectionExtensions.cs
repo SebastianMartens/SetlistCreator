@@ -7,7 +7,7 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddSetlistServices(this IServiceCollection services)
     {
-        services.AddScoped<ISetlistService, InMemorySetlistService>();
+        services.AddScoped<ISetlistService, LiteDbSetlistService>();
         return services;
     }
 }

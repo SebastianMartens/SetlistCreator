@@ -1,0 +1,153 @@
+@page "/setlists"
+@rendermode InteractiveServer
+@using SetlistCreator.Backend.Models
+@using SetlistCreator.Backend.Services
+@inject ISetlistService SetlistService
+
+<PageTitle>Manage Setlists</PageTitle>
+
+<h1>Manage Setlists</h1>
+
+@if (!string.IsNullOrWhiteSpace(message))
+{
+    <div class="alert alert-success" role="alert">@message</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
+@if (savedSetlists.Count == 0)
+{
+    <p>No saved setlists yet.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Venue name</th>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th>Total duration</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var setlist in savedSetlists)
+                {
+                    <tr>
+                        <td>
+                            <input class="form-control" value="@editVenueNames[setlist.Id]" @onchange="(e => OnVenueChanged(setlist.Id, e.Value?.ToString()))" />
+                        </td>
+                        <td>
+                            <input type="date" class="form-control" value="@FormatDate(editGigDates[setlist.Id])" @onchange="(e => OnGigDateChanged(setlist.Id, e.Value?.ToString()))" />
+                        </td>
+                        <td>@setlist.Items.Count</td>
+                        <td>@FormatDuration(SetlistService.CalculateTotalDuration(setlist))</td>
+                        <td>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => SaveGigInfo(setlist.Id)">Save details</button>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => Copy(setlist.Id)">Copy</button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(setlist.Id)">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<Setlist> savedSetlists = [];
+    private readonly Dictionary<Guid, string> editVenueNames = [];
+    private readonly Dictionary<Guid, DateOnly?> editGigDates = [];
+    private string? message;
+    private string? errorMessage;
+
+    protected override void OnInitialized() => ReloadSetlists();
+
+    private void ReloadSetlists()
+    {
+        savedSetlists = SetlistService.GetSavedSetlists().ToList();
+        editVenueNames.Clear();
+        editGigDates.Clear();
+
+        foreach (var setlist in savedSetlists)
+        {
+            editVenueNames[setlist.Id] = setlist.VenueName;
+            editGigDates[setlist.Id] = setlist.GigDate;
+        }
+    }
+
+    private void SaveGigInfo(Guid setlistId)
+    {
+        errorMessage = null;
+        message = null;
+
+        try
+        {
+            SetlistService.UpdateGigInfo(setlistId, editVenueNames[setlistId], editGigDates[setlistId]);
+            ReloadSetlists();
+            message = "Setlist details updated.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void Copy(Guid setlistId)
+    {
+        errorMessage = null;
+        message = null;
+
+        try
+        {
+            SetlistService.CopySavedSetlist(setlistId);
+            ReloadSetlists();
+            message = "Setlist copied.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void Delete(Guid setlistId)
+    {
+        errorMessage = null;
+        message = null;
+
+        try
+        {
+            SetlistService.DeleteSavedSetlist(setlistId);
+            ReloadSetlists();
+            message = "Setlist deleted.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void OnVenueChanged(Guid setlistId, string? value) => editVenueNames[setlistId] = value ?? string.Empty;
+
+    private void OnGigDateChanged(Guid setlistId, string? value)
+    {
+        if (DateOnly.TryParse(value, out var parsedDate))
+        {
+            editGigDates[setlistId] = parsedDate;
+            return;
+        }
+
+        editGigDates[setlistId] = null;
+    }
+
+    private static string FormatDate(DateOnly? date) => date?.ToString("yyyy-MM-dd") ?? string.Empty;
+
+    private static string FormatDuration(TimeSpan duration) => $"{(int)duration.TotalMinutes:00}:{duration.Seconds:00}";
+}

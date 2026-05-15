@@ -7,3 +7,5 @@ Tool to select songs for my band setlist.
 - `src/SetlistCreator.Backend`: C# domain and setlist management service
 - `src/SetlistCreator.Web`: Blazor frontend for creating setlists
 - `tests/SetlistCreator.Backend.Tests`: Unit tests for backend behavior
+
+Setlists are persisted with LiteDB and can be managed from the `/setlists` page (update venue/date, copy, delete).
