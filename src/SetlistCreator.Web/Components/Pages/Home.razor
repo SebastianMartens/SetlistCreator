@@ -136,8 +136,17 @@
                     if (item.Type == SetlistItemType.Song)
                     {
                         songNumber++;
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span><span class="fw-semibold me-2">@($"{songNumber}.")</span>@item.Name</span>
+                        <li class="list-group-item d-flex justify-content-between align-items-center @(dragOverIndex == index ? "drag-target" : "")"
+                            draggable="true"
+                            @ondragstart="() => OnDragStart(index)"
+                            @ondragover="() => OnDragOver(index)"
+                            @ondragover:preventDefault="true"
+                            @ondrop="() => OnDrop(index)"
+                            @ondragend="OnDragEnd">
+                            <span class="d-flex align-items-center gap-2">
+                                <span class="drag-handle setlist-no-print" title="Drag to reorder">⠿</span>
+                                <span><span class="fw-semibold me-2">@($"{songNumber}.")</span>@item.Name</span>
+                            </span>
                             <span class="d-flex align-items-center gap-2">
                                 <span>@FormatDuration(item.Duration)</span>
                                 <button class="btn btn-sm btn-outline-danger setlist-no-print" @onclick="() => RemoveItem(index)" title="Remove">&#x2715;</button>
@@ -146,7 +155,14 @@
                     }
                     else
                     {
-                        <li class="list-group-item d-flex align-items-center gap-2 setlist-break-item">
+                        <li class="list-group-item d-flex align-items-center gap-2 setlist-break-item @(dragOverIndex == index ? "drag-target" : "")"
+                            draggable="true"
+                            @ondragstart="() => OnDragStart(index)"
+                            @ondragover="() => OnDragOver(index)"
+                            @ondragover:preventDefault="true"
+                            @ondrop="() => OnDrop(index)"
+                            @ondragend="OnDragEnd">
+                            <span class="drag-handle setlist-no-print" title="Drag to reorder">⠿</span>
                             <div class="setlist-break-line" style="flex:1">
                                 <hr />
                                 <span class="text-muted">@item.Name (@FormatDuration(item.Duration))</span>
@@ -185,6 +201,8 @@
     private string? errorMessage;
     private string? successMessage;
     private Guid? loadedSetlistId;
+    private int? dragFromIndex;
+    private int? dragOverIndex;
 
     protected override void OnInitialized()
     {
@@ -310,6 +328,28 @@
     }
 
     private void RemoveItem(int index) => setlist.Items.RemoveAt(index);
+
+    private void OnDragStart(int index) => dragFromIndex = index;
+
+    private void OnDragOver(int index) => dragOverIndex = index;
+
+    private void OnDrop(int index)
+    {
+        if (dragFromIndex is int from && from != index)
+        {
+            var item = setlist.Items[from];
+            setlist.Items.RemoveAt(from);
+            setlist.Items.Insert(from < index ? index - 1 : index, item);
+        }
+        dragFromIndex = null;
+        dragOverIndex = null;
+    }
+
+    private void OnDragEnd()
+    {
+        dragFromIndex = null;
+        dragOverIndex = null;
+    }
 
     private static string FormatDuration(TimeSpan duration) => $"{(int)duration.TotalMinutes:00}:{duration.Seconds:00}";
 }
