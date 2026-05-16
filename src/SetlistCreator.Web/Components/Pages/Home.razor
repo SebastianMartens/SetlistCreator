@@ -109,11 +109,11 @@
         </div>
         <div class="mb-2">
             <label class="form-label" for="venueName">Venue name</label>
-            <input id="venueName" class="form-control" @bind="setlist.VenueName" />
+            <input id="venueName" class="form-control" @bind="setlist.VenueName" @bind:after="AutoSave" />
         </div>
         <div class="mb-2">
             <label class="form-label" for="gigDate">Gig date</label>
-            <InputDate id="gigDate" class="form-control" @bind-Value="setlist.GigDate" />
+            <InputDate id="gigDate" class="form-control" @bind-Value="setlist.GigDate" @bind-Value:after="AutoSave" />
         </div>
         @if (setlist.Items.Count == 0)
         {
@@ -168,7 +168,6 @@
                 }
             </ul>
         }
-        <button class="btn btn-success mt-2" @onclick="SaveSetlist" disabled="@(setlist.Items.Count == 0)">Save setlist</button>
         <p class="fw-bold mt-2">Total duration (songs + breaks): @FormatDuration(SetlistService.CalculateTotalDuration(setlist))</p>
     </div>
 </div>
@@ -263,6 +262,7 @@
         }
 
         SetlistService.AddSong(setlist, song);
+        AutoSave();
     }
 
     private void AddSearchedSong(Song song)
@@ -270,6 +270,7 @@
         errorMessage = null;
         successMessage = null;
         SetlistService.AddSong(setlist, song);
+        AutoSave();
     }
 
     private void AddManualSong()
@@ -282,6 +283,7 @@
             var manualSong = SetlistService.CreateManualSong(manualSongTitle, ParseMmSs(manualSongDuration));
             SetlistService.AddSong(setlist, manualSong);
             manualSongTitle = string.Empty;
+            AutoSave();
         }
         catch (Exception ex)
         {
@@ -297,6 +299,7 @@
         try
         {
             SetlistService.AddBreak(setlist, breakName, ParseMmSs(breakDuration));
+            AutoSave();
         }
         catch (Exception ex)
         {
@@ -316,6 +319,19 @@
         if (parts.Length == 1 && int.TryParse(parts[0], out var minOnly) && minOnly > 0)
             return TimeSpan.FromMinutes(minOnly);
         throw new FormatException("Enter duration as mm:ss (e.g. 3:30).");
+    }
+
+    private void AutoSave()
+    {
+        try
+        {
+            SetlistService.SaveSetlist(setlist);
+            loadedSetlistId = setlist.Id;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
     }
 
     private void SaveSetlist()
@@ -351,7 +367,11 @@
         }
     }
 
-    private void RemoveItem(int index) => setlist.Items.RemoveAt(index);
+    private void RemoveItem(int index)
+    {
+        setlist.Items.RemoveAt(index);
+        AutoSave();
+    }
 
     private void OnDragStart(int index) => dragFromIndex = index;
 
@@ -364,6 +384,7 @@
             var item = setlist.Items[from];
             setlist.Items.RemoveAt(from);
             setlist.Items.Insert(from < index ? index - 1 : index, item);
+            AutoSave();
         }
         dragFromIndex = null;
         dragOverIndex = null;
