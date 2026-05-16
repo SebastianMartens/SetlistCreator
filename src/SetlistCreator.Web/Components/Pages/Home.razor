@@ -80,8 +80,8 @@
             <input id="breakName" class="form-control" @bind="breakName" />
         </div>
         <div class="mb-2">
-            <label class="form-label" for="breakMinutes">Duration (minutes)</label>
-            <input id="breakMinutes" class="form-control" type="number" min="1" @bind="breakMinutes" />
+            <label class="form-label" for="breakDuration">Duration (mm:ss)</label>
+            <input id="breakDuration" class="form-control" type="text" placeholder="mm:ss" @bind="breakDuration" />
         </div>
         <button class="btn btn-outline-secondary" @onclick="AddBreak">Add break</button>
 
@@ -91,8 +91,8 @@
             <input id="manualSongTitle" class="form-control" @bind="manualSongTitle" />
         </div>
         <div class="mb-2">
-            <label class="form-label" for="manualSongMinutes">Duration (minutes)</label>
-            <input id="manualSongMinutes" class="form-control" type="number" min="1" @bind="manualSongMinutes" />
+            <label class="form-label" for="manualSongDuration">Duration (mm:ss)</label>
+            <input id="manualSongDuration" class="form-control" type="text" placeholder="mm:ss" @bind="manualSongDuration" />
         </div>
         <button class="btn btn-outline-primary" @onclick="AddManualSong">Add manual song</button>
     </div>
@@ -191,9 +191,9 @@
     private Guid selectedAlbumId;
     private Guid selectedSongId;
     private string manualSongTitle = string.Empty;
-    private int manualSongMinutes = 4;
+    private string manualSongDuration = "4:00";
     private string breakName = "Break";
-    private int breakMinutes = 1;
+    private string breakDuration = "1:00";
     private string songSearchQuery = string.Empty;
     private HashSet<string> setlistSongTitles =>
         setlist.Items
@@ -286,7 +286,7 @@
 
         try
         {
-            var manualSong = SetlistService.CreateManualSong(manualSongTitle, TimeSpan.FromMinutes(manualSongMinutes));
+            var manualSong = SetlistService.CreateManualSong(manualSongTitle, ParseMmSs(manualSongDuration));
             SetlistService.AddSong(setlist, manualSong);
             manualSongTitle = string.Empty;
         }
@@ -303,12 +303,26 @@
 
         try
         {
-            SetlistService.AddBreak(setlist, breakName, TimeSpan.FromMinutes(breakMinutes));
+            SetlistService.AddBreak(setlist, breakName, ParseMmSs(breakDuration));
         }
         catch (Exception ex)
         {
             errorMessage = ex.Message;
         }
+    }
+
+    private static TimeSpan ParseMmSs(string input)
+    {
+        var trimmed = input.Trim();
+        var parts = trimmed.Split(':');
+        if (parts.Length == 2
+            && int.TryParse(parts[0], out var min)
+            && int.TryParse(parts[1], out var sec)
+            && sec is >= 0 and < 60)
+            return TimeSpan.FromSeconds(min * 60 + sec);
+        if (parts.Length == 1 && int.TryParse(parts[0], out var minOnly) && minOnly > 0)
+            return TimeSpan.FromMinutes(minOnly);
+        throw new FormatException("Enter duration as mm:ss (e.g. 3:30).");
     }
 
     private void SaveSetlist()
