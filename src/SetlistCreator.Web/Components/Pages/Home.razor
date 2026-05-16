@@ -39,7 +39,8 @@
                 <ul class="list-group mb-2" style="max-height:240px;overflow-y:auto;">
                     @foreach (var song in songSearchResults)
                     {
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                        var alreadyAdded = setlistSongTitles.Contains(song.Title);
+                        <li class="list-group-item d-flex justify-content-between align-items-center @(alreadyAdded ? "text-muted" : "")">
                             <span>
                                 <span class="fw-semibold">@song.Title</span>
                                 <span class="text-muted small"> — @song.AlbumName (@FormatDuration(song.Duration))</span>
@@ -66,7 +67,7 @@
                 <select id="songSelect" class="form-select" @bind="selectedSongId">
                     @foreach (var song in albumSongs)
                     {
-                        <option value="@song.Id">@song.Title (@FormatDuration(song.Duration))</option>
+                        <option value="@song.Id" style="@(setlistSongTitles.Contains(song.Title) ? "color:#adb5bd;" : "")">@song.Title (@FormatDuration(song.Duration))</option>
                     }
                 </select>
             </div>
@@ -194,6 +195,11 @@
     private string breakName = "Break";
     private int breakMinutes = 1;
     private string songSearchQuery = string.Empty;
+    private HashSet<string> setlistSongTitles =>
+        setlist.Items
+               .Where(i => i.Type == SetlistItemType.Song)
+               .Select(i => i.Name)
+               .ToHashSet();
     private IEnumerable<Song> songSearchResults =>
         albums.SelectMany(a => a.Songs)
               .Where(s => s.Title.Contains(songSearchQuery, StringComparison.OrdinalIgnoreCase))
