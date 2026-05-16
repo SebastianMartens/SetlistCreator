@@ -21,8 +21,8 @@
     <div class="alert alert-success setlist-no-print" role="alert">@successMessage</div>
 }
 
-<div class="row g-4 setlist-no-print">
-    <div class="col-md-6">
+<div class="row g-4">
+    <div class="col-md-6 setlist-no-print">
         <h2>Album songs</h2>
         <div class="mb-2">
             <label class="form-label" for="songSearch">Search songs</label>
@@ -72,25 +72,8 @@
             </div>
             <button class="btn btn-primary" @onclick="AddSongFromAlbum">Add selected song</button>
         }
-    </div>
 
-    <div class="col-md-6">
-        <h2>Manual song</h2>
-        <div class="mb-2">
-            <label class="form-label" for="manualSongTitle">Song title</label>
-            <input id="manualSongTitle" class="form-control" @bind="manualSongTitle" />
-        </div>
-        <div class="mb-2">
-            <label class="form-label" for="manualSongMinutes">Duration (minutes)</label>
-            <input id="manualSongMinutes" class="form-control" type="number" min="1" @bind="manualSongMinutes" />
-        </div>
-        <button class="btn btn-outline-primary" @onclick="AddManualSong">Add manual song</button>
-    </div>
-</div>
-
-<div class="row g-4 mt-1">
-    <div class="col-md-6 setlist-no-print">
-        <h2>Break</h2>
+        <h2 class="mt-4">Break</h2>
         <div class="mb-2">
             <label class="form-label" for="breakName">Break name</label>
             <input id="breakName" class="form-control" @bind="breakName" />
@@ -100,6 +83,17 @@
             <input id="breakMinutes" class="form-control" type="number" min="1" @bind="breakMinutes" />
         </div>
         <button class="btn btn-outline-secondary" @onclick="AddBreak">Add break</button>
+
+        <h2 class="mt-4">Manual song</h2>
+        <div class="mb-2">
+            <label class="form-label" for="manualSongTitle">Song title</label>
+            <input id="manualSongTitle" class="form-control" @bind="manualSongTitle" />
+        </div>
+        <div class="mb-2">
+            <label class="form-label" for="manualSongMinutes">Duration (minutes)</label>
+            <input id="manualSongMinutes" class="form-control" type="number" min="1" @bind="manualSongMinutes" />
+        </div>
+        <button class="btn btn-outline-primary" @onclick="AddManualSong">Add manual song</button>
     </div>
 
     <div class="col-md-6">
