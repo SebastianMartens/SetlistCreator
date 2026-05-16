@@ -25,24 +25,53 @@
     <div class="col-md-6">
         <h2>Album songs</h2>
         <div class="mb-2">
-            <label class="form-label" for="albumSelect">Album</label>
-            <select id="albumSelect" class="form-select" @bind="selectedAlbumId" @bind:after="OnAlbumChanged">
-                @foreach (var album in albums)
-                {
-                    <option value="@album.Id">@album.Name</option>
-                }
-            </select>
+            <label class="form-label" for="songSearch">Search songs</label>
+            <input id="songSearch" class="form-control" @bind="songSearchQuery" @bind:event="oninput" placeholder="Type to search across all albums…" />
         </div>
-        <div class="mb-2">
-            <label class="form-label" for="songSelect">Song</label>
-            <select id="songSelect" class="form-select" @bind="selectedSongId">
-                @foreach (var song in albumSongs)
-                {
-                    <option value="@song.Id">@song.Title (@FormatDuration(song.Duration))</option>
-                }
-            </select>
-        </div>
-        <button class="btn btn-primary" @onclick="AddSongFromAlbum">Add selected song</button>
+        @if (!string.IsNullOrWhiteSpace(songSearchQuery))
+        {
+            @if (!songSearchResults.Any())
+            {
+                <p class="text-muted">No songs found.</p>
+            }
+            else
+            {
+                <ul class="list-group mb-2" style="max-height:240px;overflow-y:auto;">
+                    @foreach (var song in songSearchResults)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <span class="fw-semibold">@song.Title</span>
+                                <span class="text-muted small"> — @song.AlbumName (@FormatDuration(song.Duration))</span>
+                            </span>
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => AddSearchedSong(song)">Add</button>
+                        </li>
+                    }
+                </ul>
+            }
+        }
+        else
+        {
+            <div class="mb-2">
+                <label class="form-label" for="albumSelect">Album</label>
+                <select id="albumSelect" class="form-select" @bind="selectedAlbumId" @bind:after="OnAlbumChanged">
+                    @foreach (var album in albums)
+                    {
+                        <option value="@album.Id">@album.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-2">
+                <label class="form-label" for="songSelect">Song</label>
+                <select id="songSelect" class="form-select" @bind="selectedSongId">
+                    @foreach (var song in albumSongs)
+                    {
+                        <option value="@song.Id">@song.Title (@FormatDuration(song.Duration))</option>
+                    }
+                </select>
+            </div>
+            <button class="btn btn-primary" @onclick="AddSongFromAlbum">Add selected song</button>
+        }
     </div>
 
     <div class="col-md-6">
@@ -154,6 +183,11 @@
     private int manualSongMinutes = 4;
     private string breakName = "Break";
     private int breakMinutes = 10;
+    private string songSearchQuery = string.Empty;
+    private IEnumerable<Song> songSearchResults =>
+        albums.SelectMany(a => a.Songs)
+              .Where(s => s.Title.Contains(songSearchQuery, StringComparison.OrdinalIgnoreCase))
+              .Take(25);
     private string? errorMessage;
     private string? successMessage;
     private Guid? loadedSetlistId;
@@ -217,6 +251,13 @@
             return;
         }
 
+        SetlistService.AddSong(setlist, song);
+    }
+
+    private void AddSearchedSong(Song song)
+    {
+        errorMessage = null;
+        successMessage = null;
         SetlistService.AddSong(setlist, song);
     }
 
