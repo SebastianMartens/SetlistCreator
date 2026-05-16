@@ -28,22 +28,34 @@ public sealed class DiscogsService : IMusicSearchService
             $"artists/{artistId}/releases?per_page=100&sort=year&sort_order=asc", cancellationToken);
 
         return response?.Releases
-            //.Where(r => r.Type == "master" && r.Role == "Main")
-            .Select(r => new AlbumResult(r.Id.ToString(), r.Title, r.Year?.ToString()))
+            .Select(r => new AlbumResult($"{r.Type}:{r.Id}", r.Title, r.Year?.ToString()))
             .ToList() ?? [];
     }
 
-    public async Task<Album> GetAlbumWithTracksAsync(string masterId, string albumTitle, CancellationToken cancellationToken = default)
+    public async Task<Album> GetAlbumWithTracksAsync(string releaseId, string albumTitle, CancellationToken cancellationToken = default)
     {
-        var master = await _http.GetFromJsonAsync<MasterResponse>(
-            $"masters/{masterId}", cancellationToken);
+        var (endpoint, numericId) = ParseReleaseId(releaseId);
+        var response = await _http.GetFromJsonAsync<TracklistResponse>(
+            $"{endpoint}/{numericId}", cancellationToken);
 
-        var songs = master?.Tracklist
+        var songs = response?.Tracklist
             .Where(t => t.Type_ != "heading" && !string.IsNullOrWhiteSpace(t.Title))
             .Select(t => new Song(Guid.NewGuid(), t.Title, ParseDuration(t.Duration), albumTitle))
             .ToList() ?? [];
 
-        return new Album(DiscogsGuid(int.Parse(masterId)), albumTitle, songs);
+        return new Album(DiscogsGuid(numericId), albumTitle, songs);
+    }
+
+    private static (string endpoint, int numericId) ParseReleaseId(string releaseId)
+    {
+        var sep = releaseId.IndexOf(':');
+        if (sep > 0 && int.TryParse(releaseId[(sep + 1)..], out var id))
+        {
+            var type = releaseId[..sep];
+            return (type == "release" ? "releases" : "masters", id);
+        }
+        // Fallback for bare numeric IDs (legacy / other services)
+        return ("masters", int.Parse(releaseId));
     }
 
     private static TimeSpan ParseDuration(string? duration)
@@ -80,7 +92,7 @@ public sealed class DiscogsService : IMusicSearchService
         [property: JsonPropertyName("type")] string Type,
         [property: JsonPropertyName("role")] string Role);
 
-    private sealed record MasterResponse(
+    private sealed record TracklistResponse(
         [property: JsonPropertyName("tracklist")] List<TrackDto> Tracklist);
 
     private sealed record TrackDto(

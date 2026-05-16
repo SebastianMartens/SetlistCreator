@@ -115,30 +115,60 @@ else
             <ul class="import-list">
                 @foreach (var album in albums)
                 {
-                    <li class="import-list-item d-flex justify-content-between align-items-center">
-                        <span>
-                            <span class="fw-semibold">@album.Title</span>
-                            @if (album.Year is not null)
+                    var isExpanded = expandedAlbumIds.Contains(album.Id);
+                    var isLoadingPreview = loadingPreviewIds.Contains(album.Id);
+                    <li class="import-list-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-2">
+                                <button class="btn btn-sm btn-link p-0 text-decoration-none" title="Toggle tracklist"
+                                        @onclick="() => TogglePreview(album)">@(isExpanded ? "▲" : "▼")</button>
+                                <span>
+                                    <span class="fw-semibold">@album.Title</span>
+                                    @if (album.Year is not null)
+                                    {
+                                        <span class="text-muted"> (@album.Year)</span>
+                                    }
+                                </span>
+                            </div>
+                            <button class="btn btn-sm @(importedAlbumIds.Contains(album.Id) ? "btn-success" : "btn-outline-primary")"
+                                    @onclick="() => ImportAlbum(album)"
+                                    disabled="@(importingAlbumId == album.Id)">
+                                @if (importingAlbumId == album.Id)
+                                {
+                                    <span>Importing…</span>
+                                }
+                                else if (importedAlbumIds.Contains(album.Id))
+                                {
+                                    <span>Imported ✓</span>
+                                }
+                                else
+                                {
+                                    <span>Import</span>
+                                }
+                            </button>
+                        </div>
+                        @if (isExpanded)
+                        {
+                            @if (isLoadingPreview)
                             {
-                                <span class="text-muted"> (@album.Year)</span>
+                                <p class="text-muted small ps-3 mb-0 mt-1">Loading tracklist…</p>
                             }
-                        </span>
-                        <button class="btn btn-sm @(importedAlbumIds.Contains(album.Id) ? "btn-success" : "btn-outline-primary")"
-                                @onclick="() => ImportAlbum(album)"
-                                disabled="@(importingAlbumId == album.Id)">
-                            @if (importingAlbumId == album.Id)
+                            else if (previewCache.TryGetValue(album.Id, out var preview))
                             {
-                                <span>Importing…</span>
+                                <ol class="small ps-4 mb-0 mt-1">
+                                    @foreach (var song in preview.Songs)
+                                    {
+                                        <li>
+                                            @song.Title
+                                            @if (song.Duration > TimeSpan.Zero)
+                                            {
+                                                <span class="text-muted"> — @FormatDuration(song.Duration)</span>
+                                            }
+                                        </li>
+                                    }
+                                </ol>
                             }
-                            else if (importedAlbumIds.Contains(album.Id))
-                            {
-                                <span>Imported ✓</span>
-                            }
-                            else
-                            {
-                                <span>Import</span>
-                            }
-                        </button>
+                        }
                     </li>
                 }
             </ul>
@@ -157,6 +187,9 @@ else
     private string? importingAlbumId;
     private readonly HashSet<string> importedAlbumIds = [];
     private MusicSource activeSource = MusicSource.MusicBrainz;
+    private readonly Dictionary<string, Album> previewCache = new();
+    private readonly HashSet<string> expandedAlbumIds = [];
+    private readonly HashSet<string> loadingPreviewIds = [];
 
     private enum MusicSource { MusicBrainz, Discogs, iTunes, Deezer }
 
@@ -177,6 +210,9 @@ else
         searchQuery = string.Empty;
         errorMessage = null;
         successMessage = null;
+        previewCache.Clear();
+        expandedAlbumIds.Clear();
+        loadingPreviewIds.Clear();
     }
 
     private void RemoveImportedAlbum(Guid albumId)
@@ -222,6 +258,9 @@ else
         albums = null;
         errorMessage = null;
         successMessage = null;
+        previewCache.Clear();
+        expandedAlbumIds.Clear();
+        loadingPreviewIds.Clear();
         isLoading = true;
 
         try
@@ -237,6 +276,36 @@ else
             isLoading = false;
         }
     }
+
+    private async Task TogglePreview(AlbumResult album)
+    {
+        if (expandedAlbumIds.Contains(album.Id))
+        {
+            expandedAlbumIds.Remove(album.Id);
+            return;
+        }
+
+        expandedAlbumIds.Add(album.Id);
+        if (previewCache.ContainsKey(album.Id)) return;
+
+        loadingPreviewIds.Add(album.Id);
+        try
+        {
+            var fetched = await ActiveSource.GetAlbumWithTracksAsync(album.Id, album.Title);
+            previewCache[album.Id] = fetched;
+        }
+        catch
+        {
+            expandedAlbumIds.Remove(album.Id);
+        }
+        finally
+        {
+            loadingPreviewIds.Remove(album.Id);
+        }
+    }
+
+    private static string FormatDuration(TimeSpan d) =>
+        $"{(int)d.TotalMinutes}:{d.Seconds:D2}";
 
     private async Task ImportAlbum(AlbumResult albumResult)
     {
