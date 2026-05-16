@@ -28,7 +28,7 @@ public sealed class DiscogsService : IMusicSearchService
             $"artists/{artistId}/releases?per_page=100&sort=year&sort_order=asc", cancellationToken);
 
         return response?.Releases
-            .Where(r => r.Type == "master" && r.Role == "Main")
+            //.Where(r => r.Type == "master" && r.Role == "Main")
             .Select(r => new AlbumResult(r.Id.ToString(), r.Title, r.Year?.ToString()))
             .ToList() ?? [];
     }
