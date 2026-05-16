@@ -192,7 +192,7 @@
     private string manualSongTitle = string.Empty;
     private int manualSongMinutes = 4;
     private string breakName = "Break";
-    private int breakMinutes = 10;
+    private int breakMinutes = 1;
     private string songSearchQuery = string.Empty;
     private IEnumerable<Song> songSearchResults =>
         albums.SelectMany(a => a.Songs)
