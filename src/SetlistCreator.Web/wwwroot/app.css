@@ -338,6 +338,11 @@ h1:focus {
     background-color: #e8f0fe;
 }
 
+.setlist-print-content {
+    overflow-y: auto;
+    max-height: 45vh;
+}
+
 .setlist-print-header {
     display: none;
 }
@@ -377,13 +382,17 @@ h1:focus {
 }
 
 @media print {
+    .print-controls {
+        display: none;
+    }
+
     .setlist-no-print {
         display: none !important;
     }
 
     .setlist-print-header {
         display: block;
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
     }
 
     .setlist-print-header h2 {
@@ -392,19 +401,33 @@ h1:focus {
     }
 
     .setlist-print-header p {
-        margin: 0.25rem 0 0;
+        margin: 0.15rem 0 0;
         font-size: 1.1rem;
         color: #444;
     }
 
+    /* Flex column fills the page; JS sets font-size dynamically */
     .setlist-print-content {
-        font-size: 1.7rem;
-        line-height: 1.35;
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 6rem);
+        overflow: hidden;
+        page-break-inside: avoid;
+        line-height: 1.1;
     }
 
     .setlist-print-content .list-group-item {
-        padding-top: 0.55rem;
-        padding-bottom: 0.55rem;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0;
+        border-top: none !important;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .setlist-print-content .list-group-item:last-child {
+        border-bottom: none;
     }
 
     .list-group-item {

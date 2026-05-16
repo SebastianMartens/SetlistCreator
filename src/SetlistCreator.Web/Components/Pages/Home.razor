@@ -3,13 +3,13 @@
 @using SetlistCreator.Backend.Models
 @using SetlistCreator.Backend.Services
 @inject ISetlistService SetlistService
-@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
 
 <PageTitle>Setlist Creator</PageTitle>
 
-<h1 class="setlist-no-print">Setlist Creator</h1>
+<h1>Setlist Creator</h1>
 
-<p class="setlist-no-print">Create a live show setlist by adding songs from albums, adding manual songs, and inserting breaks.</p>
+<p>Create a live show setlist by adding songs from albums, adding manual songs, and inserting breaks.</p>
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
@@ -18,11 +18,11 @@
 
 @if (!string.IsNullOrWhiteSpace(successMessage))
 {    
-    <div class="alert alert-success setlist-no-print" role="alert">@successMessage</div>
+    <div class="alert alert-success" role="alert">@successMessage</div>
 }
 
 <div class="row g-4">
-    <div class="col-md-6 setlist-no-print">
+    <div class="col-md-6">
         <h2>Album songs</h2>
         <div class="mb-2">
             <label class="form-label" for="songSearch">Search songs</label>
@@ -99,26 +99,19 @@
 
     <div class="col-md-6">
         <div class="d-flex justify-content-between align-items-center">
-            <h2 class="setlist-no-print">Current setlist</h2>
-            <button class="btn btn-outline-secondary btn-sm setlist-no-print"
-                    @onclick="PrintSetlist"
+            <h2>Current setlist</h2>
+            <button class="btn btn-outline-secondary btn-sm"
+                    @onclick="OpenPrintView"
                     disabled="@(setlist.Items.Count == 0)"
-                    title="@(setlist.Items.Count == 0 ? "Add at least one setlist item to print." : "Print setlist")">
-                Print setlist
+                    title="@(setlist.Items.Count == 0 ? "Add at least one item to print." : "Save and open print view")">
+                Print view
             </button>
         </div>
-        <div class="setlist-print-header">
-            <h2>@(string.IsNullOrWhiteSpace(setlist.VenueName) ? "Setlist" : setlist.VenueName)</h2>
-            @if (setlist.GigDate.HasValue)
-            {
-                <p>@setlist.GigDate.Value.ToString("d MMMM yyyy")</p>
-            }
-        </div>
-        <div class="mb-2 setlist-no-print">
+        <div class="mb-2">
             <label class="form-label" for="venueName">Venue name</label>
             <input id="venueName" class="form-control" @bind="setlist.VenueName" />
         </div>
-        <div class="mb-2 setlist-no-print">
+        <div class="mb-2">
             <label class="form-label" for="gigDate">Gig date</label>
             <InputDate id="gigDate" class="form-control" @bind-Value="setlist.GigDate" />
         </div>
@@ -129,7 +122,7 @@
         else
         {
             var songNumber = 0;
-            <ul class="list-group setlist-print-content">
+            <ul class="list-group builder-setlist">
                 @for (var i = 0; i < setlist.Items.Count; i++)
                 {
                     var item = setlist.Items[i];
@@ -145,12 +138,12 @@
                             @ondrop="() => OnDrop(index)"
                             @ondragend="OnDragEnd">
                             <span class="d-flex align-items-center gap-2">
-                                <span class="drag-handle setlist-no-print" title="Drag to reorder">⠿</span>
+                                <span class="drag-handle" title="Drag to reorder">⠿</span>
                                 <span><span class="fw-semibold me-2">@($"{songNumber}.")</span>@item.Name</span>
                             </span>
                             <span class="d-flex align-items-center gap-2">
                                 <span>@FormatDuration(item.Duration)</span>
-                                <button class="btn btn-sm btn-outline-danger setlist-no-print" @onclick="() => RemoveItem(index)" title="Remove">&#x2715;</button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveItem(index)" title="Remove">&#x2715;</button>
                             </span>
                         </li>
                     }
@@ -163,20 +156,20 @@
                             @ondragover:preventDefault="true"
                             @ondrop="() => OnDrop(index)"
                             @ondragend="OnDragEnd">
-                            <span class="drag-handle setlist-no-print" title="Drag to reorder">⠿</span>
+                            <span class="drag-handle" title="Drag to reorder">⠿</span>
                             <div class="setlist-break-line" style="flex:1">
                                 <hr />
                                 <span class="text-muted">@item.Name (@FormatDuration(item.Duration))</span>
                                 <hr />
                             </div>
-                            <button class="btn btn-sm btn-outline-danger setlist-no-print" @onclick="() => RemoveItem(index)" title="Remove">&#x2715;</button>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveItem(index)" title="Remove">&#x2715;</button>
                         </li>
                     }
                 }
             </ul>
         }
-        <button class="btn btn-success mt-2 setlist-no-print" @onclick="SaveSetlist" disabled="@(setlist.Items.Count == 0)">Save setlist</button>
-        <p class="fw-bold mt-2 setlist-no-print">Total duration (songs + breaks): @FormatDuration(SetlistService.CalculateTotalDuration(setlist))</p>
+        <button class="btn btn-success mt-2" @onclick="SaveSetlist" disabled="@(setlist.Items.Count == 0)">Save setlist</button>
+        <p class="fw-bold mt-2">Total duration (songs + breaks): @FormatDuration(SetlistService.CalculateTotalDuration(setlist))</p>
     </div>
 </div>
 
@@ -342,9 +335,20 @@
         }
     }
 
-    private async Task PrintSetlist()
+    private void OpenPrintView()
     {
-        await JS.InvokeVoidAsync("window.print");
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            SetlistService.SaveSetlist(setlist);
+            loadedSetlistId = setlist.Id;
+            NavigationManager.NavigateTo($"/print/{setlist.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
     }
 
     private void RemoveItem(int index) => setlist.Items.RemoveAt(index);
