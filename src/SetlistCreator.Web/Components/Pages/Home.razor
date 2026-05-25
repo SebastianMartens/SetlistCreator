@@ -4,6 +4,7 @@
 @using SetlistCreator.Backend.Services
 @inject ISetlistService SetlistService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
 
 <PageTitle>Setlist Creator</PageTitle>
 
@@ -265,12 +266,14 @@
         AutoSave();
     }
 
-    private void AddSearchedSong(Song song)
+    private async Task AddSearchedSong(Song song)
     {
         errorMessage = null;
         successMessage = null;
         SetlistService.AddSong(setlist, song);
         AutoSave();
+        songSearchQuery = string.Empty;
+        await JS.InvokeVoidAsync("eval", "document.getElementById('songSearch').focus()");
     }
 
     private void AddManualSong()

@@ -382,6 +382,17 @@ h1:focus {
 }
 
 @media print {
+    @page {
+        size: A4 portrait;
+        margin: 15mm;
+    }
+
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
     .print-controls {
         display: none;
     }
@@ -406,11 +417,21 @@ h1:focus {
         color: #444;
     }
 
-    /* Flex column fills the page; JS sets font-size dynamically */
+    .setlist-print-page {
+        display: flex;
+        flex-direction: column;
+        height: 267mm;
+        box-sizing: border-box;
+        page-break-inside: avoid;
+    }
+
+    /* Flex column fills the printable A4 content area; JS sets font-size dynamically */
     .setlist-print-content {
         display: flex;
         flex-direction: column;
-        height: calc(100vh - 6rem);
+        flex: 1;
+        max-height: none;
+        min-height: 0;
         overflow: hidden;
         page-break-inside: avoid;
         line-height: 1.1;
@@ -421,6 +442,7 @@ h1:focus {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        font-size: inherit;
         padding: 0;
         border-top: none !important;
         border-bottom: 1px solid #ccc;

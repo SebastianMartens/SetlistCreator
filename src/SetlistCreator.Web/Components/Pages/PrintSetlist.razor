@@ -18,38 +18,40 @@ else
         <a class="btn btn-outline-secondary" href="/?setlistId=@SetlistId">Back to editor</a>
     </div>
 
-    <div class="setlist-print-header">
-        <h2>@(string.IsNullOrWhiteSpace(setlist.VenueName) ? "Setlist" : setlist.VenueName)</h2>
-        @if (setlist.GigDate.HasValue)
-        {
-            <p>@setlist.GigDate.Value.ToString("d MMMM yyyy")</p>
-        }
-    </div>
+    <div class="setlist-print-page">
+        <div class="setlist-print-header">
+            <h2>@(string.IsNullOrWhiteSpace(setlist.VenueName) ? "Setlist" : setlist.VenueName)</h2>
+            @if (setlist.GigDate.HasValue)
+            {
+                <p>@setlist.GigDate.Value.ToString("d MMMM yyyy")</p>
+            }
+        </div>
 
-    <ul class="list-group setlist-print-content">
-        @{ var songNumber = 0; }
-        @foreach (var item in setlist.Items)
-        {
-            if (item.Type == SetlistItemType.Song)
+        <ul class="list-group setlist-print-content">
+            @{ var songNumber = 0; }
+            @foreach (var item in setlist.Items)
             {
-                songNumber++;
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span><span class="fw-semibold me-2">@($"{songNumber}.")</span>@item.Name</span>
-                    <span>@FormatDuration(item.Duration)</span>
-                </li>
+                if (item.Type == SetlistItemType.Song)
+                {
+                    songNumber++;
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><span class="fw-semibold me-2">@($"{songNumber}.")</span>@item.Name</span>
+                        <span>@FormatDuration(item.Duration)</span>
+                    </li>
+                }
+                else
+                {
+                    <li class="list-group-item d-flex align-items-center gap-2 setlist-break-item">
+                        <div class="setlist-break-line" style="flex:1">
+                            <hr />
+                            <span class="text-muted">@item.Name (@FormatDuration(item.Duration))</span>
+                            <hr />
+                        </div>
+                    </li>
+                }
             }
-            else
-            {
-                <li class="list-group-item d-flex align-items-center gap-2 setlist-break-item">
-                    <div class="setlist-break-line" style="flex:1">
-                        <hr />
-                        <span class="text-muted">@item.Name (@FormatDuration(item.Duration))</span>
-                        <hr />
-                    </div>
-                </li>
-            }
-        }
-    </ul>
+        </ul>
+    </div>
 }
 
 @code {
