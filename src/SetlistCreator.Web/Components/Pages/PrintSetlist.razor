@@ -21,9 +21,9 @@ else
     <div class="setlist-print-page">
         <div class="setlist-print-header">
             <h2>@(string.IsNullOrWhiteSpace(setlist.VenueName) ? "Setlist" : setlist.VenueName)</h2>
-            @if (setlist.GigDate.HasValue)
+            @if (!string.IsNullOrWhiteSpace(GetPrintHeaderDetails()))
             {
-                <p>@setlist.GigDate.Value.ToString("d MMMM yyyy")</p>
+                <p>@GetPrintHeaderDetails()</p>
             }
         </div>
 
@@ -67,6 +67,25 @@ else
 
     private async Task Print() =>
         await JS.InvokeVoidAsync("setlistPrint", setlist?.Items.Count ?? 0);
+
+    private string GetPrintHeaderDetails()
+    {
+        if (setlist is null)
+        {
+            return string.Empty;
+        }
+
+        var details = new List<string>();
+
+        if (setlist.GigDate.HasValue)
+        {
+            details.Add(setlist.GigDate.Value.ToString("d MMMM yyyy"));
+        }
+
+        details.Add($"Total: {FormatDuration(SetlistService.CalculateTotalDuration(setlist))}");
+
+        return string.Join(" | ", details);
+    }
 
     private static string FormatDuration(TimeSpan d) =>
         $"{(int)d.TotalMinutes:00}:{d.Seconds:00}";
