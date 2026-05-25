@@ -1,26 +1,39 @@
 window.setlistPrint = function (itemCount) {
-    // A4 portrait: 297mm tall, 15mm margins top+bottom → 267mm content height.
-    // At 96 dpi: 267mm × (96/25.4) ≈ 1009 px.
-    // The list gets the remaining height after the actual header is rendered.
-    // Items share that remaining height equally (flex:1). Largest font that fits:
-    // itemHeight / lineHeight.
-    const MM_TO_PX    = 96 / 25.4;
-    const AVAILABLE_H = Math.round((297 - 2 * 15) * MM_TO_PX); // ≈ 1009 px
-    const LINE_HEIGHT = 1.1;     // matches print CSS
+    // Temporarily apply the print layout before measuring so the hidden header
+    // and the flex list are sized exactly like the final A4 print view.
+    const LINE_HEIGHT = 1.1;
     const MAX_FONT    = 100;
+    const SAFETY_PX   = 2;
+
+    function fitListToPage(list, initialFontSize) {
+        let fontSize = initialFontSize;
+
+        while (fontSize > 10) {
+            list.style.fontSize = fontSize + 'px';
+
+            if (list.scrollHeight <= list.clientHeight) {
+                return;
+            }
+
+            fontSize--;
+        }
+    }
 
     function beforePrint() {
+        document.body.classList.add('setlist-print-sizing');
+
         const list = document.querySelector('.setlist-print-content');
-        const header = document.querySelector('.setlist-print-header');
         if (!list || itemCount === 0) return;
+
         list.dataset.prevFontSize = list.style.fontSize;
-        const headerH  = header ? header.getBoundingClientRect().height : 0;
-        const itemH    = Math.max(0, AVAILABLE_H - headerH) / itemCount;
-        const fontSize = Math.max(10, Math.min(Math.floor(itemH / LINE_HEIGHT), MAX_FONT));
-        list.style.fontSize = fontSize + 'px';
+        const itemH = list.getBoundingClientRect().height / itemCount;
+        const fontSize = Math.max(10, Math.min(Math.floor(itemH / LINE_HEIGHT) - SAFETY_PX, MAX_FONT));
+        fitListToPage(list, fontSize);
     }
 
     function afterPrint() {
+        document.body.classList.remove('setlist-print-sizing');
+
         const list = document.querySelector('.setlist-print-content');
         if (!list) return;
         list.style.fontSize = list.dataset.prevFontSize || '';

@@ -381,6 +381,39 @@ h1:focus {
     border-top: 1px solid #6c757d;
 }
 
+body.setlist-print-sizing .setlist-print-header {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+body.setlist-print-sizing .setlist-print-header h2 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+body.setlist-print-sizing .setlist-print-header p {
+    margin: 0.15rem 0 0;
+    font-size: 1.1rem;
+    color: #444;
+}
+
+body.setlist-print-sizing .setlist-print-page {
+    display: flex;
+    flex-direction: column;
+    height: 267mm;
+    box-sizing: border-box;
+}
+
+body.setlist-print-sizing .setlist-print-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    max-height: none;
+    min-height: 0;
+    overflow: hidden;
+    line-height: 1.1;
+}
+
 @media print {
     @page {
         size: A4 portrait;
