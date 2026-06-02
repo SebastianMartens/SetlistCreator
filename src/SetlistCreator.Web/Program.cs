@@ -3,11 +3,12 @@ using SetlistCreator.Web.Components;
 using SetlistCreator.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+var setlistDatabasePath = builder.Configuration["Setlist:DatabasePath"];
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-builder.Services.AddSetlistServices();
+builder.Services.AddSetlistServices(setlistDatabasePath);
 builder.Services.AddHttpClient<MusicBrainzService>(client =>
 {
     client.BaseAddress = new Uri("https://musicbrainz.org/ws/2/");

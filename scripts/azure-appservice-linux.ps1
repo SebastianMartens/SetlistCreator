@@ -1,58 +1,35 @@
-# SetlistCreator
-
-Tool to select songs for my band setlist.
-
-## Projects
-
-- `src/SetlistCreator.Backend`: C# domain and setlist management service
-- `src/SetlistCreator.Web`: Blazor frontend for creating setlists
-- `tests/SetlistCreator.Backend.Tests`: Unit tests for backend behavior
-
-Setlists are persisted with LiteDB and can be managed from the `/setlists` page (update venue/date, copy, delete).
-
-## Configuration
-
-- `Discogs:Token`: Optional Discogs API token. In Azure App Service, set it as `Discogs__Token`.
-- `Setlist:DatabasePath`: Optional LiteDB file path. Leave it empty locally to use the default app path. In Azure App Service, set it to the mounted persistent storage path such as `/home/data/setlists.db`.
-
-## Azure
-
-Use [scripts/azure-appservice-linux.ps1](scripts/azure-appservice-linux.ps1) as the starting point for Linux App Service provisioning and deployment.
-
-Before deploying to Azure, confirm the target App Service runtime supports the current framework in `src/SetlistCreator.Web/SetlistCreator.Web.csproj`.
-*** Add File: c:\sma\github\SetlistCreator\scripts\azure-appservice-linux.ps1
 param(
-	[Parameter(Mandatory = $true)]
-	[string]$Subscription,
+    [Parameter(Mandatory = $true)]
+    [string]$Subscription,
 
-	[Parameter(Mandatory = $true)]
-	[string]$ResourceGroup,
+    [Parameter(Mandatory = $true)]
+    [string]$ResourceGroup,
 
-	[Parameter(Mandatory = $true)]
-	[string]$Location,
+    [Parameter(Mandatory = $true)]
+    [string]$Location,
 
-	[Parameter(Mandatory = $true)]
-	[string]$PlanName,
+    [Parameter(Mandatory = $true)]
+    [string]$PlanName,
 
-	[Parameter(Mandatory = $true)]
-	[string]$AppName,
+    [Parameter(Mandatory = $true)]
+    [string]$AppName,
 
-	[Parameter(Mandatory = $true)]
-	[string]$StorageAccount,
+    [Parameter(Mandatory = $true)]
+    [string]$StorageAccount,
 
-	[Parameter(Mandatory = $true)]
-	[string]$ShareName,
+    [Parameter(Mandatory = $true)]
+    [string]$ShareName,
 
-	[Parameter(Mandatory = $true)]
-	[string]$Runtime,
+    [Parameter(Mandatory = $true)]
+    [string]$Runtime,
 
-	[Parameter(Mandatory = $true)]
-	[string]$DiscogsToken,
+    [Parameter(Mandatory = $true)]
+    [string]$DiscogsToken,
 
-	[string]$MountPath = "/home/data",
-	[string]$DatabasePath = "/home/data/setlists.db",
-	[string]$PublishOutput = ".\\publish",
-	[string]$PublishArchive = ".\\publish.zip"
+    [string]$MountPath = "/home/data",
+    [string]$DatabasePath = "/home/data/setlists.db",
+    [string]$PublishOutput = ".\\publish",
+    [string]$PublishArchive = ".\\publish.zip"
 )
 
 $ErrorActionPreference = "Stop"
@@ -96,7 +73,7 @@ dotnet publish .\src\SetlistCreator.Web\SetlistCreator.Web.csproj -c Release -o 
 
 if (Test-Path $PublishArchive)
 {
-	Remove-Item $PublishArchive -Force
+    Remove-Item $PublishArchive -Force
 }
 
 Write-Host "Creating deployment archive..."

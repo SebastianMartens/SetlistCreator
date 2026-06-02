@@ -5,9 +5,9 @@ namespace SetlistCreator.Backend.DependencyInjection;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddSetlistServices(this IServiceCollection services)
+    public static IServiceCollection AddSetlistServices(this IServiceCollection services, string? databasePath = null)
     {
-        services.AddScoped<ISetlistService, LiteDbSetlistService>();
+        services.AddScoped<ISetlistService>(_ => new LiteDbSetlistService(databasePath));
         return services;
     }
 }
