@@ -1,30 +1,30 @@
 param(
     [Parameter(Mandatory = $true)]
-    [string]$Subscription,
+    [string]$Subscription = "63dee7c2-af00-429a-b2de-e4a867f1e9cc",
 
     [Parameter(Mandatory = $true)]
-    [string]$ResourceGroup,
+    [string]$ResourceGroup = "setlistcreator-linux-rg",
 
     [Parameter(Mandatory = $true)]
-    [string]$Location,
+    [string]$Location = "westeurope", ##"germanywestcentral",
 
     [Parameter(Mandatory = $true)]
-    [string]$PlanName,
+    [string]$PlanName = "setlistcreator-linux-plan",
 
     [Parameter(Mandatory = $true)]
-    [string]$AppName,
+    [string]$AppName = "setlistcreator-linux-app",
 
     [Parameter(Mandatory = $true)]
-    [string]$StorageAccount,
+    [string]$StorageAccount = "setlistcreatorlinuxsa",
 
     [Parameter(Mandatory = $true)]
-    [string]$ShareName,
+    [string]$ShareName = "setlistdata",
 
     [Parameter(Mandatory = $true)]
-    [string]$Runtime,
+    [string]$Runtime = "DOTNETCORE|10.0",
 
     [Parameter(Mandatory = $true)]
-    [string]$DiscogsToken,
+    [string]$DiscogsToken = "",
 
     [string]$MountPath = "/home/data",
     [string]$DatabasePath = "/home/data/setlists.db",
@@ -35,7 +35,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 Write-Host "Logging into Azure and selecting subscription..."
-az login
+az login --tenant 8dd85f0a-a4dc-4a23-9fa3-9a54b07eb2be
 az account set --subscription $Subscription
 
 Write-Host "Creating resource group..."
@@ -51,10 +51,10 @@ Write-Host "Creating Azure Files share..."
 az storage share create --name $ShareName --account-name $StorageAccount --account-key $storageKey
 
 Write-Host "Creating Linux App Service plan..."
-az appservice plan create --name $PlanName --resource-group $ResourceGroup --location $Location --sku B1 --is-linux
+az appservice plan create --name $PlanName --resource-group $ResourceGroup --location $Location --sku F1 --is-linux
 
 Write-Host "Available Linux runtimes:"
-az webapp list-runtimes --linux --output table
+az webapp list-runtimes --os linux --output table
 
 Write-Host "Creating web app..."
 az webapp create --resource-group $ResourceGroup --plan $PlanName --name $AppName --runtime $Runtime
@@ -77,10 +77,28 @@ if (Test-Path $PublishArchive)
 }
 
 Write-Host "Creating deployment archive..."
-Compress-Archive -Path (Join-Path $PublishOutput "*") -DestinationPath $PublishArchive -Force
+if (-not (Get-Command tar.exe -ErrorAction SilentlyContinue))
+{
+    throw "tar.exe is required to create a Linux-compatible deployment zip on Windows."
+}
+
+Push-Location $PublishOutput
+try
+{
+    $archivePath = Resolve-Path (Join-Path ".." (Split-Path $PublishArchive -Leaf))
+    tar.exe -a -c -f $archivePath *
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "Failed to create deployment archive using tar.exe."
+    }
+}
+finally
+{
+    Pop-Location
+}
 
 Write-Host "Deploying application archive..."
-az webapp deploy --resource-group $ResourceGroup --name $AppName --src-path $PublishArchive --type zip
+az webapp deploy --resource-group $ResourceGroup --name $AppName --src-path $PublishArchive --type zip #--enriched-errors true
 
 Write-Host "Restarting web app..."
 az webapp restart --resource-group $ResourceGroup --name $AppName
