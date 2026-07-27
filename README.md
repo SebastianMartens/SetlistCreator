@@ -7,6 +7,7 @@ Vibe-coded tool to select songs for my band setlist.
 - Import songs from published albums (using Spotify, Deezer, etc. as data source) so that verified song titles and song durations can be used.
 - Ability to add breaks and custom (non-imported) songs to your setlist
 - Print-layout tailored to on-stage setlists (automatically scaled for best readability)
+- ready-to go script to host the full application incl. data persistence on azure
 
 ## Projects
 
