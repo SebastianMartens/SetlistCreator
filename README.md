@@ -1,6 +1,21 @@
-# SetlistCreator
+# SetlistCreator Features
 
 Tool to select songs for my band setlist.
+
+The album song titles and song durations can be imported from a music service like Deezer, Discogs or Apple Music so that you don't have to enter them manually.
+
+Setlist creation is simplified with an intuitive interface that allows you add songs into your own setlist, automatically calculate total duration, and manage multiple setlists efficiently.
+Custom songs and breaks (those that not imported from music services) can be added manually to the setlist.
+
+The setlist then can be printed in an optimized 1-Page layout to be easily readable when lying on the stage floor.
+
+## Screenshots
+
+![Import albums](docs/Import.png)
+
+![Setlist builder](docs/setlistbuilder.png)
+
+![Manage saved setlists](docs/manage.png)
 
 ## Projects
 
@@ -9,6 +24,8 @@ Tool to select songs for my band setlist.
 - `tests/SetlistCreator.Backend.Tests`: Unit tests for backend behavior
 
 Setlists are persisted with LiteDB and can be managed from the `/setlists` page (update venue/date, copy, delete).
+
+![SetlistCreator architecture diagram](docs/SetlistCreator_Architecture.png)
 
 ## Configuration
 
