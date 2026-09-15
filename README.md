@@ -1,6 +1,13 @@
 # SetlistCreator Features
 
-Tool to select songs for my band setlist.
+Vibe-coded tool to select songs for my band setlist.
+
+**Features:**
+- Create and manage multiple setlists (list of songs for a musical performance)
+- Import songs from published albums (using Spotify, Deezer, etc. as data source) so that verified song titles and song durations can be used.
+- Ability to add breaks and custom (non-imported) songs to your setlist
+- Print-layout tailored to on-stage setlists (automatically scaled for best readability)
+- ready-to go script to host the full application incl. data persistence on azure
 
 The album song titles and song durations can be imported from a music service like Deezer, Discogs or Apple Music so that you don't have to enter them manually.
 
