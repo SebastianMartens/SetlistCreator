@@ -1,0 +1,55 @@
+schema: spec-driven
+
+# Project context shown to AI when creating artifacts.
+context: |
+  Tech stack: .NET 10, ASP.NET Core, Blazor Server (Interactive Server render mode),
+  LiteDB 5 (embedded document database), xunit 2 for tests, Bootstrap-style CSS classes.
+  Domain: building and printing setlists for a band's live performances; songs and
+  durations are imported from public music services so they don't have to be typed in.
+
+  Single git repo / single OpenSpec root. SetlistCreator.slnx at the repo root contains:
+    - src/SetlistCreator.Backend (class library): domain models (Setlist, SetlistItem, Song,
+      Album), ISetlistService with an in-memory implementation (InMemorySetlistService) and a
+      LiteDB-backed implementation (LiteDbSetlistService), plus the DI extension
+      AddSetlistServices(databasePath).
+    - src/SetlistCreator.Web (Blazor Server app): pages Home (setlist builder, "/"),
+      Setlists (manage saved setlists, "/setlists"), ImportAlbums ("/import") and
+      PrintSetlist ("/print/{id}"); the four music-service clients behind IMusicSearchService
+      (MusicBrainzService, DiscogsService, ITunesService, DeezerService); print-fit JavaScript
+      in wwwroot/app.js.
+    - tests/SetlistCreator.Backend.Tests (xunit): backend service tests only. There are no Web
+      or UI tests.
+
+  Hosting: Azure App Service (Linux, DOTNETCORE|10.0) with an Azure Files share mounted for the
+  LiteDB file; provisioned and deployed with the PowerShell scripts in scripts/ (Azure CLI).
+
+  Configuration keys: Discogs:Token (optional; needed only for the Discogs source) and
+  Setlist:DatabasePath (LiteDB file path; default is setlists.db next to the app binaries).
+
+  Conventions:
+    - C# with nullable reference types and implicit usings enabled; file-scoped namespaces;
+      records for immutable domain values (Song, Album, SetlistItem), a mutable class for Setlist.
+    - UI text is currently English (no German UI convention in this repo).
+    - Domain terms are defined in openspec/GLOSSARY.md; use them in specs, code and UI text.
+
+  Specs are kept in ONE openspec/specs/ directory. Capability names are plain kebab-case feature
+  names (no project prefix): album-import, music-service-sources, album-library,
+  setlist-composition, setlist-builder, manual-songs, setlist-persistence, setlist-management,
+  setlist-printing, app-configuration, app-navigation, azure-hosting.
+
+  The baseline specs describe the behavior of the code AS BUILT when OpenSpec was introduced
+  (issue #9), including known gaps (for example manual songs are not persisted, issue #7).
+  New behavior goes through an OpenSpec change that modifies these specs.
+
+# Per-artifact rules (optional)
+# rules:
+#   proposal:
+#     - Keep proposals under 500 words
+#   tasks:
+#     - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# operations:
+#   apply:
+#     guidance:
+#       - Keep test summaries concise
