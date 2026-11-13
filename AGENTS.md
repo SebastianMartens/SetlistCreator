@@ -26,7 +26,8 @@ dotnet run --project src/SetlistCreator.Web
 Local run gotcha: the checked-in `src/SetlistCreator.Web/appsettings.json` sets
 `Setlist:DatabasePath` to an empty string, which makes every page that needs the database fail
 with "The path is empty." (HTTP 500). Until that is fixed, override it when running locally, e.g.
-`$env:Setlist__DatabasePath = "$PWD\setlists.db"` (the file is created on first use; do not commit it).
+`$env:Setlist__DatabasePath = "$env:TEMP\setlists.db"` (the file is created on first use). Keep the file outside
+the repo: `*.db` is not git-ignored, so a database inside the working tree could be committed by accident.
 
 `.vscode/` has `build`, `publish` and `watch` tasks and a "`.NET Core Launch (web)`" launch config.
 If `dotnet build` fails with a locked `SetlistCreator.Web.exe`, a running instance of the app is
@@ -47,9 +48,10 @@ Two projects in one solution (`SetlistCreator.slnx`), plus one test project:
 - **`src/SetlistCreator.Backend`** (class library) - domain and persistence, no web dependencies.
   Models: `Setlist` (mutable class), `SetlistItem` (record, type `Song` or `Break`), `Song`,
   `Album` (records). `ISetlistService` is the single service contract (albums, adding items,
-  total duration, saved-setlist CRUD). `InMemorySetlistService` implements it over lists and is
-  the base for `LiteDbSetlistService`, which persists albums (collection `albums`) and saved
-  setlists (collection `setlists`) in a LiteDB 5 file and delegates the rest. DI entry point:
+  total duration, saved-setlist CRUD). `InMemorySetlistService` implements it over lists.
+  `LiteDbSetlistService` (both classes are sealed) holds a private `InMemorySetlistService` and
+  delegates the non-persistent operations to it (composition, not inheritance); it persists albums
+  (collection `albums`) and saved setlists (collection `setlists`) in a LiteDB 5 file. DI entry point:
   `AddSetlistServices(databasePath)` registers `ISetlistService` as scoped (one instance per
   Blazor circuit).
 - **`src/SetlistCreator.Web`** (Blazor Server, Interactive Server render mode) - UI and music
@@ -70,7 +72,9 @@ Configuration (env var form for Azure in brackets): `Discogs:Token` [`Discogs__T
 `Setlist:DatabasePath` [`Setlist__DatabasePath`]; default DB file is `setlists.db` next to the
 binaries.
 
-Hosting: Azure App Service on Linux (`DOTNETCORE|10.0`, plan F1, region westeurope) with an Azure
+Hosting: Azure App Service on Linux (the scripts use runtime `DOTNETCORE|10.0` and plan SKU F1; the
+resource names, location and runtime are mandatory parameters of the init and wrapper scripts and must be
+passed explicitly, as must a non-empty Discogs token) with an Azure
 Files share mounted at `/home/data` that holds the LiteDB file. Provisioning and deployment are
 PowerShell scripts that use the Azure CLI: `scripts/azure-appservice-linux-init.ps1` (one-time),
 `scripts/azure-appservice-linux-deploy.ps1` (publish zip + `az webapp deploy`) and

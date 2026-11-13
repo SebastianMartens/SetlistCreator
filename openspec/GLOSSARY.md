@@ -46,8 +46,9 @@ The two descriptive attributes of a **Setlist**: **Venue Name** and **Gig
 Date**. Edited in the **Setlist Builder** and on the **Manage Setlists** page.
 
 ### Venue Name
-Free-text name of the place where the **Setlist** is played. Trimmed when saved;
-never null (empty string when unset). Used as the heading on the **Print View**.
+Free-text name of the place where the **Setlist** is played. Never null (empty
+string when unset). Trimmed by the LiteDB-backed service on save and on update, and by the
+in-memory service on update only. Used as the heading on the **Print View**.
 
 ### Gig Date
 The optional date (no time of day) of the performance. Code: `DateOnly?`.
@@ -91,7 +92,8 @@ imported: an **Artist Result** (id, name, optional disambiguation) and an
 
 ### Default Duration
 Three minutes. A **Music Source** substitutes it for any track whose duration is
-missing, zero or unparseable.
+missing, zero or unparseable. Exception: a Discogs track with the literal duration
+`0:00` parses successfully and keeps a zero duration.
 
 ### Deterministic Album Id
 The `Guid` an **Imported Album** gets derived from the source's own numeric id

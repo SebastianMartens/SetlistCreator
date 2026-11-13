@@ -29,7 +29,7 @@ Clicking the "Date", "Venue name", "Items" or "Total duration" column header SHA
 - **THEN** the rows are sorted by venue name ascending, then descending, and the header indicator changes from ▲ to ▼
 
 ### Requirement: Editing Gig Info
-Each row SHALL have a date input and a venue text box prefilled with the stored values. Editing them SHALL change only page state until "Save details" is selected, which SHALL call `UpdateGigInfo` for that Setlist, reload the list from storage and show "Setlist details updated.". An empty or unparseable date SHALL be treated as no date. Reloading SHALL discard unsaved edits in all other rows.
+Each row SHALL have a date input and a venue text box prefilled with the stored values. Editing them SHALL change only page state until "Save details" is selected, which SHALL call `UpdateGigInfo` for that Setlist, reload the list from storage and show "Setlist details updated.". An empty or unparseable date SHALL be treated as no date. Reloading SHALL discard unsaved edits in all other rows (current behavior, known defect; changing it requires a spec change).
 
 #### Scenario: Saving details
 - **WHEN** a person changes the venue of one row and selects "Save details"

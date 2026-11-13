@@ -18,6 +18,8 @@ Describes Manual Songs: songs typed in by hand (title and duration) rather than 
 - **THEN** `ArgumentException` respectively `ArgumentOutOfRangeException` is thrown
 
 ### Requirement: Manual Songs Are Not Persisted
+Note: current behavior, known gap tracked in issue #7; fixing it will modify this requirement.
+
 `CreateManualSong` SHALL NOT store the created Song in the Album library or in any database collection. A Manual Song SHALL exist beyond the call only as a Setlist Item (type `Song`, name, duration) after the caller adds it to a Setlist, and therefore only as long as that Setlist exists (in memory) or is saved (see `setlist-persistence`). Manual Songs SHALL NOT appear in the Setlist Builder's album selector or song search, and a Manual Song added to one Setlist cannot be picked again for another Setlist.
 
 #### Scenario: Manual song is not reusable

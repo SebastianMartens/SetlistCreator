@@ -50,15 +50,15 @@ Printing SHALL use A4 portrait with 15 mm page margins. The app navigation (side
 - **THEN** the sidebar, the top row and the Print/Back controls are not part of the output
 
 ### Requirement: Automatic Font Fitting
-Before printing, `setlistPrint` SHALL add the class `setlist-print-sizing` to `body`, compute an initial font size from the list's height divided by the item count (item height / 1.1 line height, minus 2 px, limited to 10 to 100 px), and then reduce the font size by 1 px at a time until the list's content fits its box or 10 px is reached. After printing it SHALL remove the class and restore the list's previous font size. With zero items the font size is not adjusted.
+Before printing, `setlistPrint` SHALL add the class `setlist-print-sizing` to `body`, compute an initial font size from the list's height divided by the item count (item height / 1.1 line height, minus 2 px, limited to 10 to 100 px), and then, while that size is greater than 10 px, apply it as the list's inline font size and, if the content still overflows, reduce it by 1 px. The loop runs only while the size is above 10, and the size is applied only inside the loop, so the smallest size ever applied is 11 px; if the initial estimate is already 10 px, no inline font size is set at all and the list keeps its previous (CSS) font size. After printing it SHALL remove the class and restore the list's previous font size. With zero items the font size is not adjusted.
 
 #### Scenario: Few items
 - **WHEN** a Setlist with 5 items is printed
 - **THEN** the font size is large (up to 100 px) so the items fill the page height
 
 #### Scenario: Many items
-- **WHEN** a Setlist has more items than fit at the 10 px minimum
-- **THEN** the font size stays at 10 px and the overflowing items are clipped (the list has `overflow: hidden` when printing)
+- **WHEN** a Setlist has more items than fit even at the smallest applied size
+- **THEN** the last inline font size applied is 11 px (or none when the initial estimate is already 10 px) and the overflowing items are clipped (the list has `overflow: hidden` when printing)
 
 ### Requirement: Screen Preview
 On screen (not printing) the item list SHALL have a smaller font (0.9rem) and a maximum height of 45 % of the viewport, scrolling when longer.

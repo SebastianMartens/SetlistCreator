@@ -25,7 +25,7 @@ The page SHALL list all Imported Albums currently held by the album library, ord
 - **THEN** the album is removed from the album library and disappears from the list without further confirmation
 
 ### Requirement: Artist Search
-The page SHALL provide an "Artist name" text box and a "Search" button. Searching SHALL do nothing when the text is empty or whitespace. Otherwise it SHALL clear any previous artist/album results and messages, show "Loading…" while waiting, trim the text, and query the active Music Source for artists. Pressing the Enter key in the text box SHALL trigger the same search. The Search button SHALL be disabled while a request is loading.
+The page SHALL provide an "Artist name" text box and a "Search" button. Searching SHALL do nothing when the text is empty or whitespace. Otherwise it SHALL clear any previous artist/album results and messages, show "Loading…" while waiting, trim the text, and query the active Music Source for artists. Pressing the Enter key in the text box SHALL run the search handler, but with whatever text has already been committed to the page state: the text box uses `@bind` (the `change` event, fired on blur or Enter) together with an `@onkeydown` handler, so the keydown for the first Enter after typing is handled before the new text is committed and may search the previously committed text (an empty text is ignored, so nothing visibly happens until a second Enter or until the field is left). This follows from Blazor's event semantics and has not been confirmed in a browser. Note: current behavior, known defect; changing it requires a spec change. The Search button SHALL be disabled while a request is loading.
 
 #### Scenario: Searching with results
 - **WHEN** a person enters an artist name and selects "Search"
@@ -38,6 +38,10 @@ The page SHALL provide an "Artist name" text box and a "Search" button. Searchin
 #### Scenario: Search fails
 - **WHEN** the Music Source request throws (for example a network error or HTTP error status)
 - **THEN** the page shows an error alert "Search failed: {exception message}" and the loading state ends
+
+#### Scenario: Enter right after typing
+- **WHEN** a person types a new artist name and presses Enter without leaving the field first
+- **THEN** the first Enter may search the previously committed text instead of the new one
 
 #### Scenario: Empty query
 - **WHEN** a person selects "Search" with an empty or whitespace-only query

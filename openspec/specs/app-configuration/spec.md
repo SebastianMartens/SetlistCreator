@@ -9,6 +9,8 @@ The configuration keys and service wiring of the Web app (`src/SetlistCreator.We
 ### Requirement: Setlist Database Path Setting
 The app SHALL read the configuration key `Setlist:DatabasePath` and pass it to `AddSetlistServices`. When the key is absent (null) the LiteDB file defaults to `setlists.db` in the application's base directory. In Azure App Service the value is supplied through the environment variable `Setlist__DatabasePath`. A key that is present but empty is passed through as an empty string and makes the persistence layer fail on first use (see `setlist-persistence`).
 
+Note: current behavior, known defect; changing it requires a spec change. The README says to leave the key empty locally, which contradicts it.
+
 #### Scenario: Key set
 - **WHEN** `Setlist:DatabasePath` is `/home/data/setlists.db`
 - **THEN** all Saved Setlists and Imported Albums are stored in that file
@@ -44,6 +46,8 @@ The app SHALL be a Blazor Server application (Razor components with interactive 
 
 ### Requirement: Checked-In Default Settings
 The checked-in `appsettings.json` SHALL contain `Discogs:Token` (a non-blank value that the commit history calls a dummy token), `Setlist:DatabasePath` set to an empty string, default log level Information with `Microsoft.AspNetCore` at Warning, and `AllowedHosts` of `*`. `appsettings.Development.json` SHALL only set the same logging levels. Because the checked-in token is non-blank, Discogs is reported as configured unless the value is overridden (for example blank) by the environment.
+
+Note: current behavior, known defect: a token value is committed to the repository and the empty `DatabasePath` breaks local runs; changing either requires a spec change.
 
 #### Scenario: Default Discogs state
 - **WHEN** the app runs with the checked-in settings and no override of `Discogs:Token`

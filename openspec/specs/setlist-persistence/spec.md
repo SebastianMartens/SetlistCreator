@@ -2,7 +2,7 @@
 
 ## Purpose
 
-How Setlists are stored, read, copied, updated and deleted. The production implementation is `LiteDbSetlistService` (LiteDB 5 file database, collection `setlists`); `InMemorySetlistService` provides the same operations over a list and is the base for the non-persistent operations. Dependency injection is set up by `AddSetlistServices(databasePath)` in `ServiceCollectionExtensions`. Album persistence is in `album-library`; Manual Songs are not persisted (see `manual-songs`).
+How Setlists are stored, read, copied, updated and deleted. The production implementation is `LiteDbSetlistService` (LiteDB 5 file database, collection `setlists`); `InMemorySetlistService` provides the same operations over a list; `LiteDbSetlistService` holds a private instance of it and delegates the non-persistent operations to it (composition; both classes are sealed). Dependency injection is set up by `AddSetlistServices(databasePath)` in `ServiceCollectionExtensions`. Album persistence is in `album-library`; Manual Songs are not persisted (see `manual-songs`).
 
 ## Requirements
 
@@ -15,6 +15,8 @@ How Setlists are stored, read, copied, updated and deleted. The production imple
 
 ### Requirement: Database File
 `LiteDbSetlistService` SHALL use the given `databasePath`, or `setlists.db` in `AppContext.BaseDirectory` when the path is null. It SHALL create the file's parent directory when missing and SHALL open the database in LiteDB shared-connection mode, opening and disposing a connection for each operation. An empty (non-null) path is not treated as "unset" and makes construction fail with `ArgumentException` ("The path is empty.").
+
+Note: current behavior, known defect; changing it requires a spec change.
 
 #### Scenario: Default location
 - **WHEN** the service is created with a null path
@@ -75,7 +77,7 @@ How Setlists are stored, read, copied, updated and deleted. The production imple
 - **THEN** reading the Setlist back from the database (if it was saved earlier) does not contain the new item
 
 ### Requirement: In-Memory Implementation Semantics
-`InMemorySetlistService` SHALL keep Saved Setlists in a list and return deep copies from `GetSavedSetlists`/`GetSavedSetlist`/`CopySavedSetlist`; it SHALL NOT trim the venue name on `SaveSetlist` (only `UpdateGigInfo` trims). It is not registered in the app's DI container (used only as the base of `LiteDbSetlistService` and directly in tests).
+`InMemorySetlistService` SHALL keep Saved Setlists in a list and return deep copies from `GetSavedSetlists`/`GetSavedSetlist`/`CopySavedSetlist`; it SHALL NOT trim the venue name on `SaveSetlist` (only `UpdateGigInfo` trims). It is not registered in the app's DI container (used only as the private delegate inside `LiteDbSetlistService` and directly in tests).
 
 #### Scenario: Copy isolation
 - **WHEN** a Setlist returned by `InMemorySetlistService.GetSavedSetlist` is modified
